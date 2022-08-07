@@ -1,4 +1,4 @@
-unit AudioManagerU;
+unit PlaylistU;
 
 interface
 

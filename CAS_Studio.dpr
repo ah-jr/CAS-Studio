@@ -7,6 +7,10 @@ uses
   MainFormU     in 'src\MainFormU.pas',
   AudioManagerU in 'src\AudioManagerU.pas',
 
+  // GUI classes
+
+  PlaylistU     in 'src\gui\PlaylistU.pas',
+
   // Cas Libraries
   CasEngineU      in 'deps\CasAudioEngine\src\CasEngineU.pas',
   CasAsioU        in 'deps\CasAudioEngine\src\CasAsioU.pas',
