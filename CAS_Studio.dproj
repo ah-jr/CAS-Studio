@@ -109,9 +109,9 @@
         </RcCompile>
         <DCCReference Include="src\MainFormU.pas"/>
         <DCCReference Include="src\AudioManagerU.pas"/>
-        <DCCReference Include="src\gui\PlaylistU.pas">
-            <Form>/ Cas Libraries</Form>
-        </DCCReference>
+        <DCCReference Include="src\TypesU.pas"/>
+        <DCCReference Include="src\gui\PlaylistU.pas"/>
+        <DCCReference Include="src\frames\InfoFrameU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasEngineU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasAsioU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasDirectSoundU.pas"/>

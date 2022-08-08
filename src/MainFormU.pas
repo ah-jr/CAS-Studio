@@ -102,18 +102,18 @@ type
 
 
   private
+    m_dctFrames                  : TDictionary<Integer, TAcrylicFrame>;
+    m_CasEngine                  : TCasEngine;
+    m_CasDecoder                 : TCasDecoder;
+
     m_bBlockBufferPositionUpdate : Boolean;
     m_bPlaylistBar               : Boolean;
     m_bStartPlaying              : Boolean;
     m_nLoadedTrackCount          : Integer;
 
-    m_CasEngine                  : TCasEngine;
-    m_CasDecoder                 : TCasDecoder;
-
     m_DriverList                 : TAsioDriverList;
     m_lstTracks                  : TList<TAcrylicGhostPanel>;
     m_lstFiles                   : TStringList;
-    m_frameInfo                  : TAcrylicFrame;
 
     procedure EngineNotification(var MsgRec: TMessage); message CM_NotifyOwner;
     procedure DecodeReady       (var MsgRec: TMessage); message CM_NotifyDecode;
@@ -122,7 +122,7 @@ type
 
     procedure InitializeVariables;
     procedure InitializeControls;
-    procedure SetupInfoFrame;
+    procedure InitializeFrames;
     procedure LoadFiles;
     procedure ChangeEnabledObjects;
     procedure UpdateBufferPosition;
@@ -159,7 +159,9 @@ uses
   CasTypesU,
   Registry,
   AcrylicUtilsU,
-  AcrylicTypesU;
+  AcrylicTypesU,
+  TypesU,
+  InfoFrameU;
 
 {$R *.dfm}
 
@@ -174,22 +176,21 @@ begin
   BorderColor := $A064FFFF;
   BlurAmount  := 210;
   KeyPreview  := True;
+  Resizable   := True;
 
-  Resizable   := False;
-  Width       := 500;
-  Height      := 700;
+  Left        := 30;
+  Top         := 30;
+  Width       := Screen.WorkAreaRect.Width  - 200;
+  Height      := Screen.WorkAreaRect.Height - 200;
 
   MinWidth    := 500;
   MinHeight   := 700;
 
-  MaxWidth    := 500;
-  MaxHeight   := 700;
-
-  Style       := [fsClose, fsMinimize];
+  Style       := [fsClose, fsMinimize, fsMaximize];
 
   InitializeVariables;
   InitializeControls;
-  SetupInfoFrame;
+  InitializeFrames;
   LoadFiles;
 
   ChangeEnabledObjects;
@@ -241,58 +242,17 @@ begin
 end;
 
 //==============================================================================
-procedure TMainForm.SetupInfoFrame;
+procedure TMainForm.InitializeFrames;
 var
-  lblTitle : TAcrylicLabel;
-  lblText  : TAcrylicLabel;
+  afFrame : TAcrylicFrame;
 begin
-  m_frameInfo           := TAcrylicFrame.Create(Self);
-  m_frameInfo.Parent    := Self;
-  m_frameInfo.Resisable := False;
-  m_frameInfo.Width     := 300;
-  m_frameInfo.Height    := 350;
-  m_frameInfo.Left      := (ClientWidth  - m_frameInfo.Width)  div 2;
-  m_frameInfo.Top       := (ClientHeight - m_frameInfo.Height) div 2;
-  m_frameInfo.Title     := 'Information';
-  m_frameInfo.Visible   := False;
-
-  lblTitle                := TAcrylicLabel.Create(m_frameInfo.Body);
-  lblTitle.Parent         := m_frameInfo.Body;
-  lblTitle.Left           := 5;
-  lblTitle.Top            := 5;
-  lblTitle.Width          := m_frameInfo.Width - 10;
-  lblTitle.Height         := 40;
-  lblTitle.Color          := m_frameInfo.Body.Color;
-  lblTitle.WithBackground := True;
-  lblTitle.Font.Size      := 11;
-  lblTitle.Font.Style     := [fsBold];
-  lblTitle.Text           := 'Cas Studio 1.0';
-
-  lblText                := TAcrylicLabel.Create(m_frameInfo.Body);
-  lblText.Parent         := m_frameInfo.Body;
-  lblText.Left           := 5;
-  lblText.Top            := 45;
-  lblText.Width          := m_frameInfo.Width - 10;
-  lblText.Height         := m_frameInfo.Height - 10;
-  lblText.Color          := m_frameInfo.Body.Color;
-  lblText.Font.Size      := 9;
-  lblText.WithBackground := True;
-
-  lblText.Texts.Add('Created by A. H. Junior - 2021');
-  lblText.Texts.Add('Version 1.0');
-  lblText.Texts.Add('');
-  lblText.Texts.Add('Extra functionalities:');
-  lblText.Texts.Add(' 1. Shift + scroll in tracks to rearrange them');
-  lblText.Texts.Add(' 2. Press numbers (1-9) to jump to a specific ');
-  lblText.Texts.Add('    track');
-  lblText.Texts.Add(' 3. Double click in knobs to reset value (0.5)');
-  lblText.Texts.Add(' 4. Press P/T button to change trackbar to');
-  lblText.Texts.Add('    playlist/track mode');
-  lblText.Texts.Add(' 5. Press SpaceBar to play/pause');
-  lblText.Texts.Add('');
-  lblText.Texts.Add('');
-  lblText.Texts.Add('Add your suggestions as Issues at:');
-  lblText.Texts.Add('https://github.com/ah-jr/CAS-Studio');
+  //////////////////////////////////////////////////////////////////////////////
+  ///  InfoFrame
+  afFrame        := TInfoFrame.Create(Self);
+  afFrame.Parent := Self;
+  afFrame.Left   := (ClientWidth  - afFrame.Width)  div 2;
+  afFrame.Top    := (ClientHeight - afFrame.Height) div 2;
+  m_dctFrames.AddOrSetValue(FID_Info, afFrame);
 end;
 
 //==============================================================================
@@ -316,6 +276,7 @@ var
 begin
   m_CasEngine.Free;
   m_CasDecoder.Free;
+  m_dctFrames.Free;
 
   for pnlPanel in m_lstTracks do
     pnlPanel.Destroy;
@@ -370,6 +331,7 @@ procedure TMainForm.InitializeVariables;
 var
   nDriverIdx : Integer;
 begin
+  m_dctFrames   := TDictionary<Integer, TAcrylicFrame>.Create;
   m_CasEngine   := TCasEngine.Create(Self, Handle);
   m_CasDecoder  := TCasDecoder.Create;
 
@@ -492,8 +454,11 @@ end;
 
 //==============================================================================
 procedure TMainForm.btnInfoClick(Sender: TObject);
+var
+  afFrame : TAcrylicFrame;
 begin
-  m_frameInfo.Visible := not m_frameInfo.Visible;
+  if m_dctFrames.TryGetValue(FID_Info, afFrame) then
+    AfFrame.Visible := not AfFrame.Visible;
 end;
 
 //==============================================================================

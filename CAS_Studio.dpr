@@ -4,12 +4,17 @@ program CAS_Studio;
 
 uses
   Vcl.Forms,
+
+  // Main
   MainFormU     in 'src\MainFormU.pas',
   AudioManagerU in 'src\AudioManagerU.pas',
+  TypesU        in 'src\TypesU.pas',
 
   // GUI classes
-
   PlaylistU     in 'src\gui\PlaylistU.pas',
+
+  // Frames
+  InfoFrameU    in 'src\frames\InfoFrameU.pas',
 
   // Cas Libraries
   CasEngineU      in 'deps\CasAudioEngine\src\CasEngineU.pas',
