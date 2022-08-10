@@ -40,6 +40,8 @@ var
 begin
   Inherited;
 
+  Name := 'InfoFrame';
+
   Resisable               := False;
   Width                   := 280;
   Height                  := 350;

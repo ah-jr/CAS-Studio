@@ -112,6 +112,7 @@
         <DCCReference Include="src\TypesU.pas"/>
         <DCCReference Include="src\gui\PlaylistU.pas"/>
         <DCCReference Include="src\frames\InfoFrameU.pas"/>
+        <DCCReference Include="src\frames\PlaylistFrameU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasEngineU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasAsioU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasDirectSoundU.pas"/>

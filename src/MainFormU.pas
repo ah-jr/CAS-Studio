@@ -161,7 +161,8 @@ uses
   AcrylicUtilsU,
   AcrylicTypesU,
   TypesU,
-  InfoFrameU;
+  InfoFrameU,
+  PlaylistFrameU;
 
 {$R *.dfm}
 
@@ -253,6 +254,16 @@ begin
   afFrame.Left   := (ClientWidth  - afFrame.Width)  div 2;
   afFrame.Top    := (ClientHeight - afFrame.Height) div 2;
   m_dctFrames.AddOrSetValue(FID_Info, afFrame);
+
+  //////////////////////////////////////////////////////////////////////////////
+  ///  PlaylistFrame
+  afFrame        := TPlaylistFrame.Create(Self);
+  afFrame.Parent := Self;
+  afFrame.Left   := 10;
+  afFrame.Top    := 10;
+  afFrame.Width  := 300;
+  afFrame.Height := 300;
+  m_dctFrames.AddOrSetValue(FID_Playlist, afFrame);
 end;
 
 //==============================================================================

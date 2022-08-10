@@ -14,7 +14,8 @@ uses
   PlaylistU     in 'src\gui\PlaylistU.pas',
 
   // Frames
-  InfoFrameU    in 'src\frames\InfoFrameU.pas',
+  InfoFrameU      in 'src\frames\InfoFrameU.pas',
+  PlaylistFrameU  in 'src\frames\PlaylistFrameU.pas',
 
   // Cas Libraries
   CasEngineU      in 'deps\CasAudioEngine\src\CasEngineU.pas',
