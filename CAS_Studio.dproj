@@ -89,6 +89,7 @@
         <DCC_DcuOutput>dcu</DCC_DcuOutput>
         <BRCC_OutputDir>res</BRCC_OutputDir>
         <Icon_MainIcon>images\icon.ico</Icon_MainIcon>
+        <DCC_UnitSearchPath>deps\graphics32\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -111,6 +112,8 @@
         <DCCReference Include="src\AudioManagerU.pas"/>
         <DCCReference Include="src\TypesU.pas"/>
         <DCCReference Include="src\gui\PlaylistU.pas"/>
+        <DCCReference Include="src\gui\VisualObjectU.pas"/>
+        <DCCReference Include="src\gui\VisualTrackU.pas"/>
         <DCCReference Include="src\frames\InfoFrameU.pas"/>
         <DCCReference Include="src\frames\PlaylistFrameU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasEngineU.pas"/>

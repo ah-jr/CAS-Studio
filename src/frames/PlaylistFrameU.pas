@@ -24,7 +24,7 @@ uses
   private
     m_Playlist : TPlaylist;
 
-    procedure WMNCSize(var Msg: TWMSize); message WM_SIZE;
+    procedure WMNCSize   (var Msg: TWMSize);  message WM_SIZE;
 
   public
     constructor Create(AOwner : TComponent); override;
@@ -47,6 +47,8 @@ begin
   m_Playlist.Parent := Body;
   m_Playlist.Left := 0;
   m_Playlist.Top  := 0;
+
+  Visible := True;
 end;
 
 //==============================================================================

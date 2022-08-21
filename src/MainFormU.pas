@@ -32,7 +32,6 @@ uses
   ShellApi,
   IOUtils,
   GDIPOBJ,
-  AudioManagerU,
   CasEngineU,
   CasDecoderU,
   CasTrackU,
@@ -162,7 +161,8 @@ uses
   AcrylicTypesU,
   TypesU,
   InfoFrameU,
-  PlaylistFrameU;
+  PlaylistFrameU,
+  AudioManagerU;
 
 {$R *.dfm}
 
@@ -367,6 +367,8 @@ begin
 
   cbDriver.ItemIndex := 0;
   cbDriverChange(cbDriver);
+
+  CreateAudioManager(m_CasEngine);
 end;
 
 //==============================================================================
@@ -612,6 +614,8 @@ begin
       ((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Controls[4] as TAcrylicTrack).Refresh;
     end;
   end;
+
+  g_AudioManager.BroadcastProgress(m_CasEngine.Progress);
 end;
 
 //==============================================================================

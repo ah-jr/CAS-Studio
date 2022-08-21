@@ -12,6 +12,8 @@ uses
 
   // GUI classes
   PlaylistU     in 'src\gui\PlaylistU.pas',
+  VisualObjectU in 'src\gui\VisualObjectU.pas',
+  VisualTrackU  in 'src\gui\VisualTrackU.pas',
 
   // Frames
   InfoFrameU      in 'src\frames\InfoFrameU.pas',
