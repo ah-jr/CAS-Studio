@@ -4,17 +4,13 @@ interface
 
 uses
   System.Types,
-  VCL.Direct2D;
+  VCL.Direct2D,
+  VisualTypesU;
 
 type
-  TVisualTransform = record
-    Offset   : Integer;
-    pntScale : TPointF;
-  end;
-
   TVisualObject = class
   public
-    procedure Paint(a_d2dCanvas : TDirect2DCanvas; a_vtTransform : TVisualTransform); virtual; abstract;
+    procedure Paint(a_d2dKit : TD2DKit; a_vpiInfo : TVisualPaintInfo); virtual; abstract;
   end;
 
 implementation

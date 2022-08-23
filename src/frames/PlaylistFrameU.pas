@@ -30,6 +30,9 @@ uses
     constructor Create(AOwner : TComponent); override;
     destructor  Destroy; override;
 
+  public
+    property Playlist : TPlaylist read m_Playlist write m_Playlist;
+
   end;
 
 implementation

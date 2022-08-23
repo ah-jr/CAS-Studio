@@ -395,6 +395,9 @@ begin
     m_CasEngine.AddTrack(CasTrack, 0);
     m_CasEngine.AddTrackToPlaylist(CasTrack.ID, m_CasEngine.Length);
     AddTrackInfo(CasTrack);
+
+    //Fix this:
+    (m_dctFrames[FID_Playlist] as TPlaylistFrame).Playlist.AddTrack(CasTrack);
   end;
 
   if m_bStartPlaying then

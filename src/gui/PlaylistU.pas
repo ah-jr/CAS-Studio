@@ -5,10 +5,12 @@ interface
 uses
   Winapi.Windows,
   Winapi.Messages,
+  Winapi.D2D1,
   System.SysUtils,
   System.Variants,
   System.Classes,
   System.UITypes,
+  System.Generics.Collections,
   Vcl.Graphics,
   Vcl.Controls,
   Vcl.Forms,
@@ -18,18 +20,17 @@ uses
   Vcl.Direct2D,
   AudioManagerU,
   VisualObjectU,
-  Winapi.D2D1;
+  VisualTrackU,
+  VisualTypesU,
+  CasTrackU;
+
 
 type
   TPlaylist = class(TCustomControl, IAudioListener)
   private
-    m_d2dCanvas   : TDirect2DCanvas;
-    m_d2dBrush    : ID2D1SolidColorBrush;
+    m_d2dKit      : TD2DKit;
     m_dtUpdate    : TDateTime;
-    m_dProgress   : Double;
-    m_nSize       : Integer;
-
-    m_vtTransform : TVisualTransform;
+    m_vpiInfo     : TVisualPaintInfo;
 
     m_lstVisualObjects : TList<TVisualObject>;
 
@@ -41,7 +42,7 @@ type
     procedure Paint; override;
     procedure PaintBackground;
     procedure PaintGrid;
-    procedure PaintTracks;
+    procedure PaintVisualObjects;
     procedure PaintPosLine;
 
   public
@@ -49,8 +50,9 @@ type
     destructor  Destroy; override;
 
     procedure UpdateProgress(a_dProgress : Double);
+    procedure AddTrack(a_CasTrack : TCasTrack);
 
-    property Progress : Double read m_dProgress write m_dProgress;
+    //property Progress : Double read m_vpiInfo.Progress write m_vpiInfo.Progress;
 
   end;
 
@@ -58,8 +60,7 @@ implementation
 
 uses
   DateUtils,
-  System.Types,
-  CasTrackU;
+  System.Types;
 
 //==============================================================================
 constructor TPlaylist.Create(AOwner : TComponent);
@@ -67,11 +68,11 @@ begin
   Inherited;
 
   m_dtUpdate  := Now;
-  m_dProgress := 0;
-  m_nSize     := 0;
 
-  m_vtTransform.Offset := 0;
-  m_vtTransform.pntScale := PointF(1, 1);
+  m_vpiInfo.Progress           := 0;
+  m_vpiInfo.Size               := 0;
+  m_vpiInfo.Transform.Offset   := 0;
+  m_vpiInfo.Transform.pntScale := PointF(1, 1);
 
   m_lstVisualObjects := TList<TVisualObject>.Create;
 
@@ -94,9 +95,19 @@ end;
 //==============================================================================
 procedure TPlaylist.UpdateProgress(a_dProgress : Double);
 begin
-  m_dProgress := a_dProgress;
+  m_vpiInfo.Progress := a_dProgress;
 
   Invalidate;
+end;
+
+//==============================================================================
+procedure TPlaylist.AddTrack(a_CasTrack : TCasTrack);
+var
+  vtTrack : TVisualTrack;
+begin
+  vtTrack := TVisualTrack.Create(a_CasTrack);
+
+  m_lstVisualObjects.Add(vtTrack);
 end;
 
 //==============================================================================
@@ -109,7 +120,7 @@ begin
   d2dRect.Right  := ClientWidth;
   d2dRect.Bottom := ClientHeight;
 
-  m_d2dCanvas.RenderTarget.FillRectangle(d2dRect, m_d2dBrush);
+  m_d2dKit.Canvas.RenderTarget.FillRectangle(d2dRect, m_d2dKit.D2D1Brush);
 end;
 
 //==============================================================================
@@ -119,38 +130,26 @@ var
   pntDown : TPoint;
   nIndex  : Integer;
 begin
-  m_d2dCanvas.RenderTarget.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-  m_d2dBrush.SetColor(D2D1ColorF(clWhite));
+  m_d2dKit.Canvas.RenderTarget.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+  m_d2dKit.D2D1Brush.SetColor(D2D1ColorF(clWhite));
 
   for nIndex := 0 to 10 do
   begin
-    pntUp   := Point(m_vtTransform.Offset + nIndex*100, 0);
-    pntDown := Point(m_vtTransform.Offset + nIndex*100, Height);
+    pntUp   := Point(m_vpiInfo.Transform.Offset + nIndex*100, 0);
+    pntDown := Point(m_vpiInfo.Transform.Offset + nIndex*100, Height);
 
-    m_d2dCanvas.RenderTarget.DrawLine(pntUp, pntDown, m_d2dBrush);
+    m_d2dKit.Canvas.RenderTarget.DrawLine(pntUp, pntDown, m_d2dKit.D2D1Brush);
   end;
 end;
 
 //==============================================================================
-procedure TPlaylist.PaintTracks;
+procedure TPlaylist.PaintVisualObjects;
 var
-  d2dRect  : TD2D1RectF;
-  nIndex   : Integer;
-  CasTrack : TCasTrack;
+  nIndex : Integer;
 begin
-  m_d2dBrush.SetColor(D2D1ColorF(clGreen));
-
-  for nIndex := 0 to g_AudioManager.Engine.Database.Tracks.Count- 1 do
+  for nIndex := 0 to m_lstVisualObjects.Count - 1 do
   begin
-    CasTrack := g_AudioManager.Engine.Database.Tracks.Items[nIndex];
-
-    d2dRect.Top    := 10 + (20*nIndex);
-    d2dRect.Bottom := 30 + (20*nIndex);
-
-    d2dRect.Left   := m_vtTransform.Offset + (CasTrack.Position / m_nSize) * 1000;
-    d2dRect.Right  := d2dRect.Left + (CasTrack.Size / m_nSize) * 1000;
-
-    m_d2dCanvas.RenderTarget.FillRectangle(d2dRect, m_d2dBrush);
+    m_lstVisualObjects.Items[nIndex].Paint(m_D2DKit, m_vpiInfo);
   end;
 end;
 
@@ -160,16 +159,16 @@ var
   pntUp   : TD2DPoint2f;
   pntDown : TD2DPoint2f;
 begin
-  m_d2dCanvas.RenderTarget.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+  m_d2dKit.Canvas.RenderTarget.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-  pntUp.X := m_vtTransform.Offset + m_dProgress*1000;
+  pntUp.X := m_vpiInfo.Transform.Offset + m_vpiInfo.Progress*1000;
   pntUp.Y := 0;
 
-  pntDown.X := m_vtTransform.Offset + m_dProgress*1000;
+  pntDown.X := m_vpiInfo.Transform.Offset + m_vpiInfo.Progress*1000;
   pntDown.Y := Height;
 
-  m_d2dBrush.SetColor(D2D1ColorF(clBlue));
-  m_d2dCanvas.RenderTarget.DrawLine(pntUp, pntDown, m_d2dBrush);
+  m_d2dKit.D2D1Brush.SetColor(D2D1ColorF(clBlue));
+  m_d2dKit.Canvas.RenderTarget.DrawLine(pntUp, pntDown, m_d2dKit.D2D1Brush);
 end;
 
 //==============================================================================
@@ -177,22 +176,22 @@ procedure TPlaylist.Paint;
 var
   d2dBProp : TD2D1BrushProperties;
 begin
-  m_nSize := g_AudioManager.Engine.Length;
+  m_vpiInfo.Size := g_AudioManager.Engine.Length;
 
   d2dBProp.Transform := TD2DMatrix3X2F.Identity;
   d2dBProp.Opacity := 1.0;
 
-  m_d2dCanvas := TDirect2DCanvas.Create(Handle);
-  m_d2dCanvas.RenderTarget.CreateSolidColorBrush(D2D1ColorF(clGray), @d2dBProp, m_d2dBrush);
-  m_d2dCanvas.BeginDraw;
+  m_d2dKit.Canvas := TDirect2DCanvas.Create(Handle);
+  m_d2dKit.Canvas.RenderTarget.CreateSolidColorBrush(D2D1ColorF(clGray), @d2dBProp, m_d2dKit.D2D1Brush);
+  m_d2dKit.Canvas.BeginDraw;
 
   PaintBackground;
   PaintGrid;
-  PaintTracks;
+  PaintVisualObjects;
   PaintPosLine;
 
-  m_d2dCanvas.EndDraw;
-  m_d2dCanvas.Free;
+  m_d2dKit.Canvas.EndDraw;
+  m_d2dKit.Canvas.Free;
 end;
 
 //==============================================================================
@@ -221,10 +220,10 @@ begin
   Inherited;
 
   if Msg.WheelDelta > 0 then
-    m_vtTransform.Offset := m_vtTransform.Offset + c_ntDeltaOffset;
+    m_vpiInfo.Transform.Offset := m_vpiInfo.Transform.Offset + c_ntDeltaOffset;
 
   if Msg.WheelDelta < 0 then
-    m_vtTransform.Offset := m_vtTransform.Offset - c_ntDeltaOffset;
+    m_vpiInfo.Transform.Offset := m_vpiInfo.Transform.Offset - c_ntDeltaOffset;
 
   Invalidate;
 end;

@@ -4,11 +4,13 @@ interface
 
 uses
   System.Generics.Collections,
+  CasTrackU,
   CasEngineU;
 
 type
   IAudioListener = interface
     procedure UpdateProgress(a_dProgress : Double);
+    procedure AddTrack(a_CasTrack : TCasTrack);
   end;
 
   TAudioManager = class
