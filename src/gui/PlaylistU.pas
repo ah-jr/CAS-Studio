@@ -18,11 +18,10 @@ uses
   Vcl.StdCtrls,
   Vcl.ExtCtrls,
   Vcl.Direct2D,
-  AudioManagerU,
   VisualObjectU,
-  VisualTrackU,
   VisualTypesU,
-  CasTrackU;
+  PlaylistInfoU,
+  TypesU;
 
 
 type
@@ -30,7 +29,7 @@ type
   private
     m_d2dKit      : TD2DKit;
     m_dtUpdate    : TDateTime;
-    m_vpiInfo     : TVisualPaintInfo;
+    m_piInfo      : TPlaylistInfo;
 
     m_lstVisualObjects : TList<TVisualObject>;
 
@@ -53,7 +52,7 @@ type
     destructor  Destroy; override;
 
     procedure UpdateProgress(a_dProgress : Double);
-    procedure AddTrack(a_CasTrack : TCasTrack);
+    procedure AddTrack(a_nTrackID : Integer);
 
     //property Progress : Double read m_vpiInfo.Progress write m_vpiInfo.Progress;
 
@@ -63,6 +62,9 @@ implementation
 
 uses
   DateUtils,
+  VisualTrackU,
+  AudioManagerU,
+  CasTrackU,
   System.Types;
 
 //==============================================================================
@@ -72,10 +74,11 @@ begin
 
   m_dtUpdate  := Now;
 
-  m_vpiInfo.Progress           := 0;
-  m_vpiInfo.Size               := 0;
-  m_vpiInfo.Transform.Offset   := 0;
-  m_vpiInfo.Transform.pntScale := PointF(1, 1);
+  m_piInfo           := TPlaylistInfo.Create(g_AudioManager);
+  m_piInfo.Progress  := 0;
+  m_piInfo.Size      := 0;
+  m_piInfo.Transform.SetOffset(0);
+  m_piInfo.Transform.SetScale(PointF(1, 1));
 
   m_lstVisualObjects := TList<TVisualObject>.Create;
 
@@ -91,38 +94,37 @@ begin
      VisualObject.Free; 
 
   m_lstVisualObjects.Free;
-     
+  m_piInfo.Destroy;
+
   Inherited;
 end;
 
 //==============================================================================
 procedure TPlaylist.UpdateProgress(a_dProgress : Double);
 begin
-  m_vpiInfo.Progress := a_dProgress;
+  m_piInfo.Progress := a_dProgress;
 
   Invalidate;
 end;
 
 //==============================================================================
-procedure TPlaylist.AddTrack(a_CasTrack : TCasTrack);
+procedure TPlaylist.AddTrack(a_nTrackID : Integer);
 var
-  vtTrack : TVisualTrack;
+  vtTrack     : TVisualTrack;
+  CasTrack    : TCasTrack;
 begin
-  m_vpiInfo.Size := g_AudioManager.Engine.Length;
+  if g_AudioManager.Engine.Database.GetTrackById(a_nTrackID, CasTrack) then
+  begin
+    m_piInfo.Size  := g_AudioManager.Engine.Length;
+    vtTrack        := TVisualTrack.Create(m_piInfo, a_nTrackID);
 
-  vtTrack := TVisualTrack.Create(a_CasTrack);
+    vtTrack.Location.SetX(0);
+    vtTrack.Location.SetY(0);
+    vtTrack.Location.SetWidth(m_piInfo.GetVisualSize(CasTrack.Size));
+    vtTrack.Location.SetHeight(80);
 
-//  vtTrack.Location.SetX(0);
-//  vtTrack.Location.SetY(0);
-//  vtTrack.Location.SetWidth(100);
-//  vtTrack.Location.SetHeight(100);
-
-  vtTrack.Location.SetX(0);
-  vtTrack.Location.SetY(0);
-  vtTrack.Location.SetWidth(Trunc((a_CasTrack.Size / m_vpiInfo.Size) * 1000));
-  vtTrack.Location.SetHeight(100);
-
-  m_lstVisualObjects.Add(vtTrack);
+    m_lstVisualObjects.Add(vtTrack);
+  end;
 end;
 
 //==============================================================================
@@ -150,8 +152,8 @@ begin
 
   for nIndex := 0 to 10 do
   begin
-    pntUp   := Point(m_vpiInfo.Transform.Offset + nIndex*100, 0);
-    pntDown := Point(m_vpiInfo.Transform.Offset + nIndex*100, Height);
+    pntUp   := Point(m_piInfo.Transform.Offset + nIndex*c_nBarWidth, 0);
+    pntDown := Point(m_piInfo.Transform.Offset + nIndex*c_nBarWidth, Height);
 
     m_d2dKit.Canvas.RenderTarget.DrawLine(pntUp, pntDown, m_d2dKit.D2D1Brush);
   end;
@@ -164,7 +166,7 @@ var
 begin
   for nIndex := 0 to m_lstVisualObjects.Count - 1 do
   begin
-    m_lstVisualObjects.Items[nIndex].Paint(m_D2DKit, m_vpiInfo);
+    m_lstVisualObjects.Items[nIndex].Paint(m_D2DKit);
   end;
 end;
 
@@ -176,10 +178,10 @@ var
 begin
   m_d2dKit.Canvas.RenderTarget.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-  pntUp.X := m_vpiInfo.Transform.Offset + m_vpiInfo.Progress*1000;
+  pntUp.X := m_piInfo.Transform.Offset + m_piInfo.Progress*g_AudioManager.BeatCount*c_nBarWidth;
   pntUp.Y := 0;
 
-  pntDown.X := m_vpiInfo.Transform.Offset + m_vpiInfo.Progress*1000;
+  pntDown.X := m_piInfo.Transform.Offset + m_piInfo.Progress*g_AudioManager.BeatCount*c_nBarWidth;
   pntDown.Y := Height;
 
   m_d2dKit.D2D1Brush.SetColor(D2D1ColorF(clBlue));
@@ -274,10 +276,10 @@ begin
   Inherited;
 
   if Msg.WheelDelta > 0 then
-    m_vpiInfo.Transform.Offset := m_vpiInfo.Transform.Offset + c_ntDeltaOffset;
+    m_piInfo.Transform.SetOffset(m_piInfo.Transform.Offset + c_ntDeltaOffset);
 
   if Msg.WheelDelta < 0 then
-    m_vpiInfo.Transform.Offset := m_vpiInfo.Transform.Offset - c_ntDeltaOffset;
+    m_piInfo.Transform.SetOffset(m_piInfo.Transform.Offset - c_ntDeltaOffset);
 
   Invalidate;
 end;

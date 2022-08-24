@@ -8,21 +8,22 @@ uses
   VCL.Direct2D,
   VCL.Graphics,
   VCL.Controls,
-  CasTrackU,
   VisualObjectU,
-  VisualTypesU;
+  VisualTypesU,
+  PlaylistInfoU;
 
 type
 
   TVisualTrack = class(TVisualObject)
   private
-    m_CasTrack : TCasTrack;
+    m_nTrackID : Integer;
+    m_piInfo   : TPlaylistInfo;
 
   public
-    constructor Create(a_CasTrack : TCasTrack);
+    constructor Create(a_piInfo : TPlaylistInfo; a_nTrackID : Integer);
     destructor Destroy; override;
 
-    procedure Paint(a_d2dKit : TD2DKit; a_vpiInfo : TVisualPaintInfo); override;
+    procedure Paint(a_d2dKit : TD2DKit); override;
 
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
@@ -31,14 +32,12 @@ type
 
 implementation
 
-uses
-  AudioManagerU;
-
 //==============================================================================
-constructor TVisualTrack.Create(a_CasTrack : TCasTrack);
+constructor TVisualTrack.Create(a_piInfo : TPlaylistInfo; a_nTrackID : Integer);
 begin
   Inherited Create;
-  m_CasTrack := a_CasTrack;
+  m_nTrackID := a_nTrackID;
+  m_piInfo   := a_piInfo;
 end;
 
 //==============================================================================
@@ -48,7 +47,7 @@ begin
 end;
 
 //==============================================================================
-procedure TVisualTrack.Paint(a_d2dKit : TD2DKit; a_vpiInfo : TVisualPaintInfo);
+procedure TVisualTrack.Paint(a_d2dKit : TD2DKit);
 var
   d2dRect : TD2D1RectF;
 begin
@@ -72,8 +71,6 @@ end;
 procedure TVisualTrack.MouseMove(Shift: TShiftState; X, Y: Integer);
 begin
   Inherited;
-
-
 end;
 
 //==============================================================================
@@ -86,7 +83,9 @@ end;
 procedure TVisualTrack.MouseUp  (Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   if m_vosState.Clicked then
-    m_CasTrack.Position := Trunc(g_AudioManager.Engine.Length * X/1000);
+  begin
+    m_piInfo.SetTrackPosition(m_nTrackID, m_vlLocation.X);
+  end;
 
   Inherited;
 end;

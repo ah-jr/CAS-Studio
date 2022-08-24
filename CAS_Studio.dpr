@@ -9,12 +9,16 @@ uses
   MainFormU     in 'src\MainFormU.pas',
   AudioManagerU in 'src\AudioManagerU.pas',
   TypesU        in 'src\TypesU.pas',
+  UtilsU        in 'src\UtilsU.pas',
 
   // GUI classes
   PlaylistU     in 'src\gui\PlaylistU.pas',
   VisualObjectU in 'src\gui\VisualObjectU.pas',
   VisualTrackU  in 'src\gui\VisualTrackU.pas',
   VisualTypesU  in 'src\gui\VisualTypesU.pas',
+
+  // INFO classes
+  PlaylistInfoU   in 'src\gui\PlaylistInfoU.pas',
 
   // Frames
   InfoFrameU      in 'src\frames\InfoFrameU.pas',

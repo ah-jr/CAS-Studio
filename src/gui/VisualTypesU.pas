@@ -7,6 +7,9 @@ uses
   VCL.Direct2D,
   Winapi.D2D1;
 
+const
+  c_nBarWidth = 100;
+
 type
 
   TD2DKit = record
@@ -17,14 +20,11 @@ type
   end;
 
   TVisualTransform = record
-    Offset   : Integer;
-    pntScale : TPointF;
-  end;
+    Offset  : Integer;
+    Scale   : TPointF;
 
-  TVisualPaintInfo = record
-    Transform : TVisualTransform;
-    Size      : Integer;
-    Progress  : Double;
+    procedure SetOffset(a_nOffset : Integer);
+    procedure SetScale(a_pntScale : TPointF);
   end;
 
   TVisualObjectState = record
@@ -46,7 +46,6 @@ type
     procedure SetHeight(a_Height : Integer);
 
     class function Create(a_X, a_Y, a_Width, a_Height : Integer) : TVisualLocation; static;
-
   end;
 
 implementation
@@ -88,6 +87,18 @@ end;
 procedure TVisualLocation.SetHeight(a_Height : Integer);
 begin
   Height := a_Height;
+end;
+
+//==============================================================================
+procedure TVisualTransform.SetOffset(a_nOffset : Integer);
+begin
+  Offset := a_nOffset;
+end;
+
+//==============================================================================
+procedure TVisualTransform.SetScale(a_pntScale : TPointF);
+begin
+  Scale := a_pntScale;
 end;
 
 end.

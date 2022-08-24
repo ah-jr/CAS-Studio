@@ -20,7 +20,7 @@ type
   public
     constructor Create;
 
-    procedure Paint(a_d2dKit : TD2DKit; a_vpiInfo : TVisualPaintInfo); virtual; abstract;
+    procedure Paint(a_d2dKit : TD2DKit); virtual; abstract;
 
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); virtual;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;

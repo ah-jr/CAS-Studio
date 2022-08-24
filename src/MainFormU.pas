@@ -396,8 +396,7 @@ begin
     m_CasEngine.AddTrackToPlaylist(CasTrack.ID, m_CasEngine.Length);
     AddTrackInfo(CasTrack);
 
-    //Fix this:
-    (m_dctFrames[FID_Playlist] as TPlaylistFrame).Playlist.AddTrack(CasTrack);
+    g_AudioManager.BroadcastNewTrack(CasTrack.ID);
   end;
 
   if m_bStartPlaying then
@@ -849,6 +848,8 @@ begin
     m_CasEngine.AddTrackToPlaylist(NewTrack.ID, m_CasEngine.Length);
 
     AddTrackInfo(NewTrack);
+
+    g_AudioManager.BroadcastNewTrack(NewTrack.ID);
 
     UpdateProgressBar;
   end;
