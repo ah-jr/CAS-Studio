@@ -45,7 +45,8 @@ uses
   AcrylicScrollBoxU,
   AcrylicKnobU,
   AcrylicFrameU,
-  AcrylicTrackBarU;
+  AcrylicTrackBarU,
+  AudioManagerU;
 
 type
   TMainForm = class(TAcrylicForm)
@@ -104,6 +105,7 @@ type
     m_dctFrames                  : TDictionary<Integer, TAcrylicFrame>;
     m_CasEngine                  : TCasEngine;
     m_CasDecoder                 : TCasDecoder;
+    m_AudioManager               : TAudioManager;
 
     m_bBlockBufferPositionUpdate : Boolean;
     m_bPlaylistBar               : Boolean;
@@ -161,8 +163,7 @@ uses
   AcrylicTypesU,
   TypesU,
   InfoFrameU,
-  PlaylistFrameU,
-  AudioManagerU;
+  PlaylistFrameU;
 
 {$R *.dfm}
 
@@ -257,7 +258,7 @@ begin
 
   //////////////////////////////////////////////////////////////////////////////
   ///  PlaylistFrame
-  afFrame        := TPlaylistFrame.Create(Self);
+  afFrame        := TPlaylistFrame.Create(Self, m_AudioManager);
   afFrame.Parent := Self;
   afFrame.Left   := 10;
   afFrame.Top    := 10;
@@ -342,9 +343,10 @@ procedure TMainForm.InitializeVariables;
 var
   nDriverIdx : Integer;
 begin
-  m_dctFrames   := TDictionary<Integer, TAcrylicFrame>.Create;
-  m_CasEngine   := TCasEngine.Create(Self, Handle);
-  m_CasDecoder  := TCasDecoder.Create;
+  m_dctFrames    := TDictionary<Integer, TAcrylicFrame>.Create;
+  m_CasEngine    := TCasEngine.Create(Self, Handle);
+  m_CasDecoder   := TCasDecoder.Create;
+  m_AudioManager := TAudioManager.Create(m_CasEngine);
 
   m_lstTracks   := TList<TAcrylicGhostPanel>.Create;
   m_lstFiles    := TStringList.Create;
@@ -367,8 +369,6 @@ begin
 
   cbDriver.ItemIndex := 0;
   cbDriverChange(cbDriver);
-
-  CreateAudioManager(m_CasEngine);
 end;
 
 //==============================================================================
@@ -396,7 +396,7 @@ begin
     m_CasEngine.AddTrackToPlaylist(CasTrack.ID, m_CasEngine.Length);
     AddTrackInfo(CasTrack);
 
-    g_AudioManager.BroadcastNewTrack(CasTrack.ID);
+    m_AudioManager.BroadcastNewTrack(CasTrack.ID);
   end;
 
   if m_bStartPlaying then
@@ -617,7 +617,7 @@ begin
     end;
   end;
 
-  g_AudioManager.BroadcastProgress(m_CasEngine.Progress);
+  m_AudioManager.BroadcastProgress(m_CasEngine.Progress);
 end;
 
 //==============================================================================
@@ -849,7 +849,7 @@ begin
 
     AddTrackInfo(NewTrack);
 
-    g_AudioManager.BroadcastNewTrack(NewTrack.ID);
+    m_AudioManager.BroadcastNewTrack(NewTrack.ID);
 
     UpdateProgressBar;
   end;

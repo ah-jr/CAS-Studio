@@ -8,7 +8,12 @@ uses
   Winapi.D2D1;
 
 const
-  c_nBarWidth = 100;
+  //////////////////////////////////////////////////////////////////////////////
+  ///  PlaylistSurface
+  c_nBarWidth   = 100;
+  c_nLineHeight = 50;
+
+  c_nBarSplit   = 16;
 
 type
 

@@ -1,4 +1,4 @@
-unit PlaylistU;
+unit PlaylistSurfaceU;
 
 interface
 
@@ -20,25 +20,21 @@ uses
   Vcl.Direct2D,
   VisualObjectU,
   VisualTypesU,
-  PlaylistInfoU,
+  PlaylistManagerU,
   TypesU;
 
 
 type
-  TPlaylist = class(TCustomControl, IAudioListener)
+  TPlaylistSurface = class(TCustomControl, IAudioListener)
   private
-    m_d2dKit      : TD2DKit;
-    m_dtUpdate    : TDateTime;
-    m_piInfo      : TPlaylistInfo;
+    m_d2dKit    : TD2DKit;
+    m_dtUpdate  : TDateTime;
+    m_pmManager : TPlaylistManager;
 
     m_lstVisualObjects : TList<TVisualObject>;
 
     procedure WMEraseBkgnd (var Msg: TWmEraseBkgnd); message WM_ERASEBKGND;
     procedure CMMouseWheel (var Msg: TCMMouseWheel); message CM_MOUSEWHEEL;
-
-    procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
-    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
-    procedure MouseUp  (Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
 
   protected
     procedure Paint; override;
@@ -47,46 +43,40 @@ type
     procedure PaintVisualObjects;
     procedure PaintPosLine;
 
+    procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseUp  (Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+
   public
-    constructor Create(AOwner : TComponent); override;
+    constructor Create(AOwner : TComponent; a_pmManager : TPlaylistManager); reintroduce; overload;
     destructor  Destroy; override;
 
     procedure UpdateProgress(a_dProgress : Double);
-    procedure AddTrack(a_nTrackID : Integer);
-
-    //property Progress : Double read m_vpiInfo.Progress write m_vpiInfo.Progress;
+    procedure AddTrack      (a_nTrackID  : Integer);
 
   end;
 
 implementation
 
 uses
+  System.Types,
   DateUtils,
   VisualTrackU,
-  AudioManagerU,
-  CasTrackU,
-  System.Types;
+  CasTrackU;
 
 //==============================================================================
-constructor TPlaylist.Create(AOwner : TComponent);
+constructor TPlaylistSurface.Create(AOwner : TComponent; a_pmManager : TPlaylistManager);
 begin
-  Inherited;
+  Inherited Create(AOwner);
 
+  m_pmManager := a_pmManager;
   m_dtUpdate  := Now;
 
-  m_piInfo           := TPlaylistInfo.Create(g_AudioManager);
-  m_piInfo.Progress  := 0;
-  m_piInfo.Size      := 0;
-  m_piInfo.Transform.SetOffset(0);
-  m_piInfo.Transform.SetScale(PointF(1, 1));
-
   m_lstVisualObjects := TList<TVisualObject>.Create;
-
-  g_AudioManager.AddListener(Self);
 end;
 
 //==============================================================================
-destructor  TPlaylist.Destroy;
+destructor  TPlaylistSurface.Destroy;
 var 
   VisualObject : TVisualObject;
 begin
@@ -94,41 +84,31 @@ begin
      VisualObject.Free; 
 
   m_lstVisualObjects.Free;
-  m_piInfo.Destroy;
 
   Inherited;
 end;
 
 //==============================================================================
-procedure TPlaylist.UpdateProgress(a_dProgress : Double);
+procedure TPlaylistSurface.UpdateProgress(a_dProgress : Double);
 begin
-  m_piInfo.Progress := a_dProgress;
+  m_pmManager.Progress := a_dProgress;
 
   Invalidate;
 end;
 
 //==============================================================================
-procedure TPlaylist.AddTrack(a_nTrackID : Integer);
+procedure TPlaylistSurface.AddTrack(a_nTrackID : Integer);
 var
-  vtTrack     : TVisualTrack;
-  CasTrack    : TCasTrack;
+  vtTrack : TVisualTrack;
 begin
-  if g_AudioManager.Engine.Database.GetTrackById(a_nTrackID, CasTrack) then
-  begin
-    m_piInfo.Size  := g_AudioManager.Engine.Length;
-    vtTrack        := TVisualTrack.Create(m_piInfo, a_nTrackID);
+  vtTrack := TVisualTrack.Create(m_pmManager, a_nTrackID);
+  vtTrack.SetLine(m_lstVisualObjects.Count);
 
-    vtTrack.Location.SetX(0);
-    vtTrack.Location.SetY(0);
-    vtTrack.Location.SetWidth(m_piInfo.GetVisualSize(CasTrack.Size));
-    vtTrack.Location.SetHeight(80);
-
-    m_lstVisualObjects.Add(vtTrack);
-  end;
+  m_lstVisualObjects.Add(vtTrack);
 end;
 
 //==============================================================================
-procedure TPlaylist.PaintBackground;
+procedure TPlaylistSurface.PaintBackground;
 var
   d2dRect    : TD2D1RectF;
 begin
@@ -141,7 +121,7 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylist.PaintGrid;
+procedure TPlaylistSurface.PaintGrid;
 var
   pntUp   : TPoint;
   pntDown : TPoint;
@@ -152,15 +132,23 @@ begin
 
   for nIndex := 0 to 10 do
   begin
-    pntUp   := Point(m_piInfo.Transform.Offset + nIndex*c_nBarWidth, 0);
-    pntDown := Point(m_piInfo.Transform.Offset + nIndex*c_nBarWidth, Height);
+    pntUp   := Point(m_pmManager.Transform.Offset + nIndex*c_nBarWidth, 0);
+    pntDown := Point(m_pmManager.Transform.Offset + nIndex*c_nBarWidth, Height);
+
+    m_d2dKit.Canvas.RenderTarget.DrawLine(pntUp, pntDown, m_d2dKit.D2D1Brush);
+  end;
+
+  for nIndex := 0 to 10 do
+  begin
+    pntUp   := Point(0,     nIndex*c_nLineHeight);
+    pntDown := Point(Width, nIndex*c_nLineHeight);
 
     m_d2dKit.Canvas.RenderTarget.DrawLine(pntUp, pntDown, m_d2dKit.D2D1Brush);
   end;
 end;
 
 //==============================================================================
-procedure TPlaylist.PaintVisualObjects;
+procedure TPlaylistSurface.PaintVisualObjects;
 var
   nIndex : Integer;
 begin
@@ -171,17 +159,17 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylist.PaintPosLine;
+procedure TPlaylistSurface.PaintPosLine;
 var
   pntUp   : TD2DPoint2f;
   pntDown : TD2DPoint2f;
 begin
   m_d2dKit.Canvas.RenderTarget.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-  pntUp.X := m_piInfo.Transform.Offset + m_piInfo.Progress*g_AudioManager.BeatCount*c_nBarWidth;
+  pntUp.X := m_pmManager.Transform.Offset + m_pmManager.Progress*m_pmManager.BeatCount*c_nBarWidth;
   pntUp.Y := 0;
 
-  pntDown.X := m_piInfo.Transform.Offset + m_piInfo.Progress*g_AudioManager.BeatCount*c_nBarWidth;
+  pntDown.X := m_pmManager.Transform.Offset + m_pmManager.Progress*m_pmManager.BeatCount*c_nBarWidth;
   pntDown.Y := Height;
 
   m_d2dKit.D2D1Brush.SetColor(D2D1ColorF(clBlue));
@@ -189,7 +177,7 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylist.Paint;
+procedure TPlaylistSurface.Paint;
 var
   d2dBProp : TD2D1BrushProperties;
 begin
@@ -210,7 +198,7 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylist.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TPlaylistSurface.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   nIndex   : Integer;
   voObject : TVisualObject;
@@ -225,7 +213,7 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylist.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TPlaylistSurface.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   nIndex   : Integer;
   voObject : TVisualObject;
@@ -236,11 +224,14 @@ begin
 
     if voObject.Location.Contains(X, Y) then
       voObject.MouseUp(Button, Shift, X, Y);
+
+    if voObject.State.Clicked then
+      voObject.MouseUp(Button, Shift, X, Y);
   end;
 end;
 
 //==============================================================================
-procedure TPlaylist.MouseMove(Shift: TShiftState; X, Y: Integer);
+procedure TPlaylistSurface.MouseMove(Shift: TShiftState; X, Y: Integer);
 var
   nIndex   : Integer;
   voObject : TVisualObject;
@@ -251,8 +242,10 @@ begin
   begin
     voObject := m_lstVisualObjects.Items[nIndex];
 
-    if voObject.Location.Contains(X, Y) then
+    if voObject.Location.Contains(X, Y) or (voObject.State.Clicked) then
+    begin
       voObject.MouseMove(Shift, X, Y);
+    end
   end;
 
   if DateUtils.MilliSecondsBetween(Now, m_dtUpdate) > 10 then
@@ -263,23 +256,23 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylist.WMEraseBkgnd(var Msg: TWmEraseBkgnd);
+procedure TPlaylistSurface.WMEraseBkgnd(var Msg: TWmEraseBkgnd);
 begin
   //
 end;
 
 //==============================================================================
-procedure TPlaylist.CMMouseWheel(var Msg: TCMMouseWheel);
+procedure TPlaylistSurface.CMMouseWheel(var Msg: TCMMouseWheel);
 const
   c_ntDeltaOffset = 10;
 begin
   Inherited;
 
   if Msg.WheelDelta > 0 then
-    m_piInfo.Transform.SetOffset(m_piInfo.Transform.Offset + c_ntDeltaOffset);
+    m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset + c_ntDeltaOffset);
 
   if Msg.WheelDelta < 0 then
-    m_piInfo.Transform.SetOffset(m_piInfo.Transform.Offset - c_ntDeltaOffset);
+    m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset - c_ntDeltaOffset);
 
   Invalidate;
 end;

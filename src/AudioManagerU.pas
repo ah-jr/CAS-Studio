@@ -29,16 +29,13 @@ type
     procedure BroadcastNewTrack(a_nTrackID : Integer);
     procedure SetTrackPosition(a_nTrackID : Integer; a_nPosition : Integer);
 
+    function  GetTrackSize(a_nTrackID : Integer) : Integer;
+
     property Engine    : TCasEngine read m_CasEngine write m_CasEngine;
     property BPM       : Double     read m_dBpm      write m_dBpm;
     property BeatCount : Double     read GetBeatCount;
 
   end;
-
-  procedure CreateAudioManager(CasEngine : TCasEngine);
-
-var
-  g_AudioManager : TAudioManager = nil;
 
 implementation
 
@@ -112,9 +109,13 @@ begin
 end;
 
 //==============================================================================
-procedure CreateAudioManager(CasEngine : TCasEngine);
+function TAudioManager.GetTrackSize(a_nTrackID : Integer) : Integer;
+var
+  CasTrack : TCasTrack;
 begin
-  g_AudioManager := TAudioManager.Create(CasEngine);
+  Result := 0;
+  if m_CasEngine.Database.GetTrackById(a_nTrackID, CasTrack) then
+    Result := CasTrack.Size;
 end;
 
 end.

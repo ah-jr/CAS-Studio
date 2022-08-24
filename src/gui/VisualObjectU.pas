@@ -43,11 +43,7 @@ end;
 //==============================================================================
 procedure TVisualObject.MouseMove(Shift: TShiftState; X, Y: Integer);
 begin
-  if m_vosState.Clicked then
-  begin
-    m_vlLocation.X := X - m_pntMouseClick.X;
-    m_vlLocation.Y := Y - m_pntMouseClick.Y;
-  end;
+  //
 end;
 
 //==============================================================================

@@ -112,13 +112,11 @@
         <DCCReference Include="src\AudioManagerU.pas"/>
         <DCCReference Include="src\TypesU.pas"/>
         <DCCReference Include="src\UtilsU.pas"/>
-        <DCCReference Include="src\gui\PlaylistU.pas"/>
+        <DCCReference Include="src\gui\PlaylistSurfaceU.pas"/>
         <DCCReference Include="src\gui\VisualObjectU.pas"/>
         <DCCReference Include="src\gui\VisualTrackU.pas"/>
-        <DCCReference Include="src\gui\VisualTypesU.pas">
-            <Form>/ Frames</Form>
-        </DCCReference>
-        <DCCReference Include="src\gui\PlaylistInfoU.pas"/>
+        <DCCReference Include="src\gui\VisualTypesU.pas"/>
+        <DCCReference Include="src\bus\PlaylistManagerU.pas"/>
         <DCCReference Include="src\frames\InfoFrameU.pas"/>
         <DCCReference Include="src\frames\PlaylistFrameU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasEngineU.pas"/>

@@ -11,14 +11,16 @@ uses
   TypesU        in 'src\TypesU.pas',
   UtilsU        in 'src\UtilsU.pas',
 
-  // GUI classes
-  PlaylistU     in 'src\gui\PlaylistU.pas',
+  // Surface classes
+  PlaylistSurfaceU  in 'src\gui\PlaylistSurfaceU.pas',
+
+  // Visual classes
   VisualObjectU in 'src\gui\VisualObjectU.pas',
   VisualTrackU  in 'src\gui\VisualTrackU.pas',
   VisualTypesU  in 'src\gui\VisualTypesU.pas',
 
-  // INFO classes
-  PlaylistInfoU   in 'src\gui\PlaylistInfoU.pas',
+  // Managers
+  PlaylistManagerU   in 'src\bus\PlaylistManagerU.pas',
 
   // Frames
   InfoFrameU      in 'src\frames\InfoFrameU.pas',

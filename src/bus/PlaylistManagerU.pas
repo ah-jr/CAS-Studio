@@ -1,4 +1,4 @@
-unit PlaylistInfoU;
+unit PlaylistManagerU;
 
 interface
 
@@ -7,7 +7,7 @@ uses
   VisualTypesU;
 
 type
-  TPlaylistInfo = class
+  TPlaylistManager = class
   private
     m_AudioManager : TAudioManager;
 
@@ -22,12 +22,15 @@ type
     function  PositionToBeat(a_nX : Integer) : Double;
     function  PositionToSample(a_nX : Integer) : Integer;
     function  GetVisualSize(a_nSampleSize : Integer) : Integer;
+    function  GetTrackVisualSize(a_nTrackID : Integer) : Integer;
+    function  GetBeatCount : Double;
 
     procedure SetTrackPosition(a_nTrackID : Integer; a_nX : Integer);
 
     property Transform : TVisualTransform read  m_vtTransform write m_vtTransform;
     property Size      : Integer          read  m_nSize       write m_nSize;
     property Progress  : Double           read  m_dProgress   write m_dProgress;
+    property BeatCount : Double           read  GetBeatCount;
 
   end;
 
@@ -37,25 +40,31 @@ uses
   UtilsU;
 
 //==============================================================================
-constructor TPlaylistInfo.Create(a_AudioManager : TAudioManager);
+constructor TPlaylistManager.Create(a_AudioManager : TAudioManager);
 begin
   m_AudioManager := a_AudioManager;
 end;
 
 //==============================================================================
-destructor  TPlaylistInfo.Destroy;
+destructor  TPlaylistManager.Destroy;
 begin
   //
 end;
 
 //==============================================================================
-function TPlaylistInfo.PositionToBeat(a_nX : Integer) : Double;
+function TPlaylistManager.GetBeatCount : Double;
+begin
+  Result := MsToBeats(m_AudioManager.BPM, SampleCountToMs(m_AudioManager.Engine.Length, m_AudioManager.Engine.SampleRate));
+end;
+
+//==============================================================================
+function TPlaylistManager.PositionToBeat(a_nX : Integer) : Double;
 begin
   Result := (a_nX / c_nBarWidth);
 end;
 
 //==============================================================================
-function TPlaylistInfo.PositionToSample(a_nX : Integer) : Integer;
+function TPlaylistManager.PositionToSample(a_nX : Integer) : Integer;
 var
   nSampleRate : Integer;
   dBPM        : Double;
@@ -67,7 +76,7 @@ begin
 end;
 
 //==============================================================================
-function TPlaylistInfo.GetVisualSize(a_nSampleSize : Integer) : Integer;
+function TPlaylistManager.GetVisualSize(a_nSampleSize : Integer) : Integer;
 var
   nSampleRate : Integer;
   dBPM        : Double;
@@ -81,7 +90,23 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylistInfo.SetTrackPosition(a_nTrackID : Integer; a_nX : Integer);
+function TPlaylistManager.GetTrackVisualSize(a_nTrackID : Integer) : Integer;
+var
+  nSampleRate : Integer;
+  dBPM        : Double;
+  dBeats      : Double;
+  nSize       : Integer;
+begin
+  nSampleRate    := Trunc(m_AudioManager.Engine.SampleRate);
+  dBPM           := m_AudioManager.BPM;
+  nSize          := m_AudioManager.GetTrackSize(a_nTrackID);
+  dBeats         := MsToBeats(dBPM, SampleCountToMs(nSize, nSampleRate));
+
+  Result := Trunc(dBeats * c_nBarWidth);
+end;
+
+//==============================================================================
+procedure TPlaylistManager.SetTrackPosition(a_nTrackID : Integer; a_nX : Integer);
 var
   nPosition : Integer;
 begin
