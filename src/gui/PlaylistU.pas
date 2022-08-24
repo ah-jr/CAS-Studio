@@ -35,8 +35,11 @@ type
     m_lstVisualObjects : TList<TVisualObject>;
 
     procedure WMEraseBkgnd (var Msg: TWmEraseBkgnd); message WM_ERASEBKGND;
-    procedure WMMouseMove  (var Msg: TMessage);      message WM_MOUSEMOVE;
     procedure CMMouseWheel (var Msg: TCMMouseWheel); message CM_MOUSEWHEEL;
+
+    procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseUp  (Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
 
   protected
     procedure Paint; override;
@@ -105,7 +108,19 @@ procedure TPlaylist.AddTrack(a_CasTrack : TCasTrack);
 var
   vtTrack : TVisualTrack;
 begin
+  m_vpiInfo.Size := g_AudioManager.Engine.Length;
+
   vtTrack := TVisualTrack.Create(a_CasTrack);
+
+//  vtTrack.Location.SetX(0);
+//  vtTrack.Location.SetY(0);
+//  vtTrack.Location.SetWidth(100);
+//  vtTrack.Location.SetHeight(100);
+
+  vtTrack.Location.SetX(0);
+  vtTrack.Location.SetY(0);
+  vtTrack.Location.SetWidth(Trunc((a_CasTrack.Size / m_vpiInfo.Size) * 1000));
+  vtTrack.Location.SetHeight(100);
 
   m_lstVisualObjects.Add(vtTrack);
 end;
@@ -176,8 +191,6 @@ procedure TPlaylist.Paint;
 var
   d2dBProp : TD2D1BrushProperties;
 begin
-  m_vpiInfo.Size := g_AudioManager.Engine.Length;
-
   d2dBProp.Transform := TD2DMatrix3X2F.Identity;
   d2dBProp.Opacity := 1.0;
 
@@ -195,21 +208,62 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylist.WMEraseBkgnd(var Msg: TWmEraseBkgnd);
+procedure TPlaylist.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  nIndex   : Integer;
+  voObject : TVisualObject;
 begin
-  //
+  for nIndex := 0 to m_lstVisualObjects.Count - 1 do
+  begin
+    voObject := m_lstVisualObjects.Items[nIndex];
+
+    if voObject.Location.Contains(X, Y) then
+      voObject.MouseDown(Button, Shift, X, Y);
+  end;
 end;
 
 //==============================================================================
-procedure TPlaylist.WMMouseMove(var Msg: TMessage);
+procedure TPlaylist.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  nIndex   : Integer;
+  voObject : TVisualObject;
+begin
+  for nIndex := 0 to m_lstVisualObjects.Count - 1 do
+  begin
+    voObject := m_lstVisualObjects.Items[nIndex];
+
+    if voObject.Location.Contains(X, Y) then
+      voObject.MouseUp(Button, Shift, X, Y);
+  end;
+end;
+
+//==============================================================================
+procedure TPlaylist.MouseMove(Shift: TShiftState; X, Y: Integer);
+var
+  nIndex   : Integer;
+  voObject : TVisualObject;
 begin
   inherited;
+
+  for nIndex := 0 to m_lstVisualObjects.Count - 1 do
+  begin
+    voObject := m_lstVisualObjects.Items[nIndex];
+
+    if voObject.Location.Contains(X, Y) then
+      voObject.MouseMove(Shift, X, Y);
+  end;
 
   if DateUtils.MilliSecondsBetween(Now, m_dtUpdate) > 10 then
   begin
     Invalidate;
     m_dtUpdate := Now;
   end;
+end;
+
+//==============================================================================
+procedure TPlaylist.WMEraseBkgnd(var Msg: TWmEraseBkgnd);
+begin
+  //
 end;
 
 //==============================================================================
