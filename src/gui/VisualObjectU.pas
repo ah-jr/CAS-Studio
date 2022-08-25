@@ -12,7 +12,6 @@ uses
 type
   TVisualObject = class
   protected
-    m_vlLocation : TVisualLocation;
     m_vosState   : TVisualObjectState;
 
     m_pntMouseClick : TPoint;
@@ -26,7 +25,8 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
     procedure MouseUp  (Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
 
-    property Location : TVisualLocation    read m_vlLocation  write m_vlLocation;
+    function GetRect : TRect; virtual; abstract;
+
     property State    : TVisualObjectState read m_vosState    write m_vosState;
 
   end;
@@ -36,7 +36,6 @@ implementation
 //==============================================================================
 constructor TVisualObject.Create;
 begin
-  m_vlLocation    := TVisualLocation.Create(-1,-1,-1,-1);
   m_pntMouseClick := Point(-1, -1);
 end;
 
@@ -50,7 +49,7 @@ end;
 procedure TVisualObject.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   m_vosState.Clicked := True;
-  m_pntMouseClick    := Point(X - m_vlLocation.X, Y - m_vlLocation.Y);
+  m_pntMouseClick    := Point(X - GetRect.Left, Y - GetRect.Top);
 end;
 
 //==============================================================================

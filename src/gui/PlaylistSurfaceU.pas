@@ -132,8 +132,8 @@ begin
 
   for nIndex := 0 to 10 do
   begin
-    pntUp   := Point(m_pmManager.Transform.Offset + nIndex*c_nBarWidth, 0);
-    pntDown := Point(m_pmManager.Transform.Offset + nIndex*c_nBarWidth, Height);
+    pntUp   := Point(Trunc(m_pmManager.BeatToX(nIndex)), 0);
+    pntDown := Point(Trunc(m_pmManager.BeatToX(nIndex)), Height);
 
     m_d2dKit.Canvas.RenderTarget.DrawLine(pntUp, pntDown, m_d2dKit.D2D1Brush);
   end;
@@ -166,10 +166,10 @@ var
 begin
   m_d2dKit.Canvas.RenderTarget.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-  pntUp.X := m_pmManager.Transform.Offset + m_pmManager.Progress*m_pmManager.BeatCount*c_nBarWidth;
+  pntUp.X := m_pmManager.GetProgressX;
   pntUp.Y := 0;
 
-  pntDown.X := m_pmManager.Transform.Offset + m_pmManager.Progress*m_pmManager.BeatCount*c_nBarWidth;
+  pntDown.X := m_pmManager.GetProgressX;
   pntDown.Y := Height;
 
   m_d2dKit.D2D1Brush.SetColor(D2D1ColorF(clBlue));
@@ -207,7 +207,7 @@ begin
   begin
     voObject := m_lstVisualObjects.Items[nIndex];
 
-    if voObject.Location.Contains(X, Y) then
+    if voObject.GetRect.Contains(Point(X, Y)) then
       voObject.MouseDown(Button, Shift, X, Y);
   end;
 end;
@@ -222,7 +222,7 @@ begin
   begin
     voObject := m_lstVisualObjects.Items[nIndex];
 
-    if voObject.Location.Contains(X, Y) then
+    if voObject.GetRect.Contains(Point(X, Y)) then
       voObject.MouseUp(Button, Shift, X, Y);
 
     if voObject.State.Clicked then
@@ -242,7 +242,7 @@ begin
   begin
     voObject := m_lstVisualObjects.Items[nIndex];
 
-    if voObject.Location.Contains(X, Y) or (voObject.State.Clicked) then
+    if voObject.GetRect.Contains(Point(X, Y)) or (voObject.State.Clicked) then
     begin
       voObject.MouseMove(Shift, X, Y);
     end
@@ -269,10 +269,10 @@ begin
   Inherited;
 
   if Msg.WheelDelta > 0 then
-    m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset + c_ntDeltaOffset);
+    m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset - c_ntDeltaOffset);
 
   if Msg.WheelDelta < 0 then
-    m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset - c_ntDeltaOffset);
+    m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset + c_ntDeltaOffset);
 
   Invalidate;
 end;

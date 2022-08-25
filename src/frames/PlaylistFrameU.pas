@@ -56,7 +56,7 @@ begin
   m_pmManager.Progress  := 0;
   m_pmManager.Size      := 0;
   m_pmManager.Transform.SetOffset(0);
-  m_pmManager.Transform.SetScale(PointF(1, 1));
+  m_pmManager.Transform.SetScale(PointF(2, 1));
 
   m_Playlist        := TPlaylistSurface.Create(Body, m_pmManager);
   m_Playlist.Parent := Body;
