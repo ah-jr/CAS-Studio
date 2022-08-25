@@ -29,7 +29,11 @@ type
     procedure BroadcastNewTrack(a_nTrackID : Integer);
     procedure SetTrackPosition(a_nTrackID : Integer; a_nPosition : Integer);
 
-    function  GetTrackSize(a_nTrackID : Integer) : Integer;
+    function  GetTrackSize(a_nTrackID   : Integer) : Integer;
+    function  GetTrackData(a_nTrackID   : Integer;
+                           var a_pLeft  : PIntArray;
+                           var a_pRight : PIntArray;
+                           var a_nSize  : Integer) : Boolean;
 
     property Engine    : TCasEngine read m_CasEngine write m_CasEngine;
     property BPM       : Double     read m_dBpm      write m_dBpm;
@@ -117,6 +121,25 @@ begin
   if m_CasEngine.Database.GetTrackById(a_nTrackID, CasTrack) then
     Result := CasTrack.Size;
 end;
+
+//==============================================================================
+function TAudioManager.GetTrackData(a_nTrackID   : Integer;
+                                    var a_pLeft  : PIntArray;
+                                    var a_pRight : PIntArray;
+                                    var a_nSize  : Integer) : Boolean;
+var
+  CasTrack : TCasTrack;
+begin
+  Result := m_CasEngine.DataBase.GetTrackByID(a_nTrackID, CasTrack);
+
+  if Result then
+  begin
+    a_pLeft  := @CasTrack.RawData.Left;
+    a_pRight := @CasTrack.RawData.Right;
+    a_nSize := Length(CasTrack.RawData.Left);
+  end;
+end;
+
 
 end.
 

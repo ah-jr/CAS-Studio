@@ -20,6 +20,10 @@ type
     procedure AddTrack(a_nTrackID : Integer);
   end;
 
+  TIntArray = Array of Integer;
+  PIntArray = ^TIntArray;
+
+
 implementation
 
 end.

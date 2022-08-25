@@ -21,13 +21,13 @@ uses
 //==============================================================================
 function BpmToMpb(a_dBpm : Double) : Double;
 begin
-  Result := (c_nSecInMin * c_nMsInSec) / a_dBpm;
+  Result := c_nSecInMin * (c_nMsInSec / a_dBpm);
 end;
 
 //==============================================================================
 function MpbToBpm(a_dMpb : Double) : Double;
 begin
-  Result := (c_nSecInMin * c_nMsInSec) / a_dMpb;
+  Result := c_nSecInMin * (c_nMsInSec / a_dMpb);
 end;
 
 //==============================================================================
@@ -45,13 +45,13 @@ end;
 //==============================================================================
 function SampleCountToMs(a_nSmpCount : Integer; a_dSmpRate : Double) : Double;
 begin
-  Result := c_nMsInSec * a_nSmpCount/a_dSmpRate;
+  Result := c_nMsInSec * (a_nSmpCount/a_dSmpRate);
 end;
 
 //==============================================================================
 function MsToSampleCount(a_dMs : Double; a_dSmpRate : Double) : Integer;
 begin
-  Result := Trunc(a_dSmpRate * a_dMs / c_nMsInSec);
+  Result := Trunc(a_dSmpRate * (a_dMs/c_nMsInSec));
 end;
 
 end.

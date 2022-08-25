@@ -4,7 +4,8 @@ interface
 
 uses
   AudioManagerU,
-  VisualTypesU;
+  VisualTypesU,
+  TypesU;
 
 type
   TPlaylistManager = class
@@ -29,6 +30,10 @@ type
     function  GetBeatCount                                 : Double;
     function  GetProgressX                                 : Double;
 
+    function  GetTrackData(a_nTrackID   : Integer;
+                           var a_pLeft  : PIntArray;
+                           var a_pRight : PIntArray;
+                           var a_nSize  : Integer) : Boolean;
 
     procedure SetTrackPosition(a_nTrackID : Integer; a_nPos : Integer);
 
@@ -61,7 +66,6 @@ function TPlaylistManager.GetBeatCount : Double;
 var
   nSampleRate : Integer;
   dBPM        : Double;
-  dBeats      : Double;
   nSize       : Integer;
 begin
   nSampleRate := Trunc(m_AudioManager.Engine.SampleRate);
@@ -168,4 +172,14 @@ begin
   m_AudioManager.SetTrackPosition(a_nTrackID, a_nPos);
 end;
 
+//==============================================================================
+function TPlaylistManager.GetTrackData(a_nTrackID   : Integer;
+                                       var a_pLeft  : PIntArray;
+                                       var a_pRight : PIntArray;
+                                       var a_nSize  : Integer) : Boolean;
+begin
+  Result := m_AudioManager.GetTrackData(a_nTrackID, a_pLeft, a_pRight, a_nSize);
+end;
+
+//==============================================================================
 end.
