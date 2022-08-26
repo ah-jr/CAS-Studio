@@ -5,6 +5,7 @@ interface
 uses
   System.Classes,
   System.Types,
+  System.Generics.Collections,
   Winapi.D2D1,
   VCL.Direct2D,
   VCL.Graphics,
@@ -21,12 +22,11 @@ type
     m_pmManager  : TPlaylistManager;
     m_nHeight    : Integer;
     m_nPosition  : Integer;
-    m_d2dSink    : ID2D1GeometrySink;
-    m_d2dPath    : ID2D1PathGeometry;
+    m_lstWavePoints : TList<TPointF>;
     m_dPathScale : Double;
     m_bUpdatePath: Boolean;
 
-  procedure CalculateWaveSink(a_d2dSink : ID2D1GeometrySink);
+  procedure CalculateWaveSink;
 
   public
     constructor Create(a_piInfo : TPlaylistManager; a_nTrackID : Integer);
@@ -63,8 +63,9 @@ begin
   m_pmManager  := a_piInfo;
   m_nPosition  := 0;
   m_nHeight    := 0;
-  m_d2dSink    := nil;
   m_bUpdatePath:= False;
+
+  m_lstWavePoints := TList<TPointF>.Create;
 end;
 
 //==============================================================================
@@ -107,7 +108,14 @@ var
   recSelf   : TRect;
   d2dMatrix : TD2DMatrix3x2F;
   pntScale  : TPointF;
-  d2dScaledPath : ID2D1TransformedGeometry;
+  pntScaleChange : TPointF;
+  //d2dScaledPath : ID2D1TransformedGeometry;
+  nIndex : Integer;
+  pntCurr : TD2D1Point2F;
+  pntNext : TD2D1Point2F;
+
+  nFirstPointIdx : Integer;
+  nLastPointIdx : Integer;
 begin
   recSelf := GetRect;
 
@@ -125,25 +133,58 @@ begin
   a_d2dKit.Target.SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
   pntScale := m_pmManager.Transform.Scale;
+
+  if m_dPathScale > 0 then
+    pntScaleChange := PointF(pntScale.X/m_dPathScale, pntScale.Y);
+
   d2dMatrix := TD2DMatrix3x2F.Translation(recSelf.Left, recSelf.Top);
   a_d2dKit.Target.SetTransform(d2dMatrix);
 
-  if (m_d2dPath = nil) or (m_bUpdatePath) then
+//  if (m_d2dPath = nil) or (m_bUpdatePath) then
+//  begin
+//    a_d2dKit.Factory.CreatePathGeometry(m_d2dPath);
+//    m_d2dPath.Open(m_d2dSink);
+//    CalculateWaveSink(m_d2dSink);
+//    m_bUpdatePath := False;
+//  end
+//  else
+//  begin
+//    m_d2dPath.Stream(m_d2dSink);
+//  end;
+
+  if (m_lstWavePoints.Count = 0) or
+     (pntScaleChange.X > 2) or
+     (pntScaleChange.X < 0.5) then
   begin
-    a_d2dKit.Factory.CreatePathGeometry(m_d2dPath);
-    m_d2dPath.Open(m_d2dSink);
-    CalculateWaveSink(m_d2dSink);
-    m_bUpdatePath := False;
-  end
-  else
-  begin
-    m_d2dPath.Stream(m_d2dSink);
+    CalculateWaveSink;
+    pntScaleChange.X := 1;
   end;
 
-  d2dMatrix := TD2DMatrix3x2F.Scale(pntScale.X/m_dPathScale, 1, D2D1PointF(0, 0));
-  a_d2dKit.Factory.CreateTransformedGeometry(m_d2dPath, d2dMatrix, d2dScaledPath);
+  nFirstPointIdx := 0;
+  nLastPointIdx  := m_lstWavePoints.Count - 2;
 
-  a_d2dKit.Target.DrawGeometry(d2dScaledPath, a_d2dKit.Brush, 1.5, ssStyle);
+  if recSelf.Left < 0 then
+    nFirstPointIdx := Trunc((-recSelf.Left/recSelf.Width) * nLastPointIdx);
+
+  if recSelf.Right > m_pmManager.GetPlaylistRect.Width then
+    nLastPointIdx := Ceil(((m_pmManager.GetPlaylistRect.Width - recSelf.Left)/recSelf.Width) * nLastPointIdx);
+
+  for nIndex := nFirstPointIdx to nLastPointIdx do
+  begin
+    pntCurr.X := m_lstWavePoints.Items[nIndex].X * pntScaleChange.X;
+    pntCurr.Y := m_lstWavePoints.Items[nIndex].Y;
+
+    pntNext.X := m_lstWavePoints.Items[nIndex + 1].X * pntScaleChange.X;
+    pntNext.Y := m_lstWavePoints.Items[nIndex + 1].Y;
+
+    a_d2dKit.Target.DrawLine(pntCurr, pntNext, a_d2dKit.Brush, 1);
+  end;
+
+
+//  d2dMatrix := TD2DMatrix3x2F.Scale(pntScale.X/m_dPathScale, 1, D2D1PointF(0, 0));
+//  a_d2dKit.Factory.CreateTransformedGeometry(m_d2dPath, d2dMatrix, d2dScaledPath);
+
+//  a_d2dKit.Target.DrawGeometry(d2dScaledPath, a_d2dKit.Brush, 1.5, ssStyle);
   a_d2dKit.Target.SetTransform(TD2DMatrix3x2F.Identity);
 end;
 
@@ -208,7 +249,7 @@ begin
 end;
 
 //==============================================================================
-procedure TVisualTrack.CalculateWaveSink(a_d2dSink : ID2D1GeometrySink);
+procedure TVisualTrack.CalculateWaveSink;
 var
   recSelf      : TRect;
   nTrackIdx    : Integer;
@@ -227,15 +268,16 @@ var
   pData        : PIntArray;
   nDataSize    : Integer;
 const
-  DATAOFFSET = 5;
+  DATAOFFSET = 0;//5;
   m_nTitleBarHeight = 0;
 begin
   recSelf      := GetRect;
-  nPathSize    := Trunc(6*recSelf.Width);
+  nPathSize    := Trunc(10*recSelf.Width);
   pData        := nil;
 
   m_pmManager.GetTrackData(m_nTrackID, pData, pData, nDataSize);
 
+  m_lstWavePoints.Clear;
   m_dPathScale := m_pmManager.Transform.Scale.X;
   dScreenRatio := (recSelf.Width - 2 * DATAOFFSET) / nPathSize;
   dTrackRatio  := nDataSize / nPathSize;
@@ -248,9 +290,6 @@ begin
 
   for nTrackIdx := 0 to nDataSize - 1 do
     nMax := Max(nMax, Abs(TIntArray(pData^)[nTrackIdx]));
-
-  a_d2dSink.SetFillMode(D2D1_FILL_MODE_WINDING);
-  a_d2dSink.BeginFigure(D2D1PointF(DATAOFFSET, nOffset), D2D1_FIGURE_BEGIN_FILLED);
 
   //////////////////////////////////////////////////////////////////////////////
   // Narrow down data to fit in the PATHSIZE
@@ -280,16 +319,13 @@ begin
     pntCurr.X := nTrackIdx * dScreenRatio + DATAOFFSET;
     pntCurr.Y := nAmplitude * (nAverage/nMax) + nOffset;
 
-    a_d2dSink.AddLine(D2D1PointF(pntCurr.X, pntCurr.Y));
+    m_lstWavePoints.Add(pntCurr);
 
     pntPrev.X := pntCurr.X;
     pntPrev.Y := pntCurr.Y;
 
     bSwitch := not bSwitch;
   end;
-
-  a_d2dSink.EndFigure(D2D1_FIGURE_END_OPEN);
-  a_d2dSink.Close;
 end;
 
 end.

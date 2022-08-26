@@ -33,6 +33,7 @@ type
 
     m_lstVisualObjects : TList<TVisualObject>;
 
+    procedure WMNCSize     (var Msg: TWMSize);       message WM_SIZE;
     procedure WMEraseBkgnd (var Msg: TWmEraseBkgnd); message WM_ERASEBKGND;
     procedure CMMouseWheel (var Msg: TCMMouseWheel); message CM_MOUSEWHEEL;
 
@@ -290,6 +291,12 @@ begin
   end;
 
   Invalidate(10);
+end;
+
+//==============================================================================
+procedure TPlaylistSurface.WMNCSize(var Msg: TWMSize);
+begin
+  m_pmManager.SetPlaylistRect(ClientRect);
 end;
 
 //==============================================================================

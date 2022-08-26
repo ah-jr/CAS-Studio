@@ -3,6 +3,7 @@ unit PlaylistManagerU;
 interface
 
 uses
+  System.Types,
   AudioManagerU,
   VisualTypesU,
   TypesU;
@@ -15,6 +16,8 @@ type
     m_vtTransform : TVisualTransform;
     m_nSize       : Integer;
     m_dProgress   : Double;
+    m_recPlaylist : TRect;
+
 
   public
     constructor Create(a_AudioManager : TAudioManager);
@@ -27,14 +30,16 @@ type
     function  GetVisualSize      (a_nSampleSize : Integer) : Double;
     function  GetSampleSize      (a_nVisualSize : Double)  : Integer;
     function  GetTrackVisualSize (a_nTrackID    : Integer) : Integer;
-    function  GetBeatCount                                 : Double;
-    function  GetProgressX                                 : Double;
+    function  GetBeatCount    : Double;
+    function  GetProgressX    : Double;
+    function  GetPlaylistRect : TRect;
 
     function  GetTrackData(a_nTrackID   : Integer;
                            var a_pLeft  : PIntArray;
                            var a_pRight : PIntArray;
                            var a_nSize  : Integer) : Boolean;
 
+    procedure SetPlaylistRect (a_recPlaylist : TRect);
     procedure SetTrackPosition(a_nTrackID : Integer; a_nPos : Integer);
 
     property Transform : TVisualTransform read  m_vtTransform write m_vtTransform;
@@ -53,6 +58,7 @@ uses
 constructor TPlaylistManager.Create(a_AudioManager : TAudioManager);
 begin
   m_AudioManager := a_AudioManager;
+  m_recPlaylist  := TRect.Create(-1,-1,-1,-1);
 end;
 
 //==============================================================================
@@ -179,6 +185,24 @@ function TPlaylistManager.GetTrackData(a_nTrackID   : Integer;
                                        var a_nSize  : Integer) : Boolean;
 begin
   Result := m_AudioManager.GetTrackData(a_nTrackID, a_pLeft, a_pRight, a_nSize);
+end;
+
+//==============================================================================
+function TPlaylistManager.GetPlaylistRect : TRect;
+begin
+  Result.Left   := m_recPlaylist.Left;
+  Result.Top    := m_recPlaylist.Top;
+  Result.Width  := m_recPlaylist.Width;
+  Result.Height := m_recPlaylist.Height;
+end;
+
+//==============================================================================
+procedure TPlaylistManager.SetPlaylistRect(a_recPlaylist : TRect);
+begin
+  m_recPlaylist.Left   := a_recPlaylist.Left;
+  m_recPlaylist.Top    := a_recPlaylist.Top;
+  m_recPlaylist.Width  := a_recPlaylist.Width;
+  m_recPlaylist.Height := a_recPlaylist.Height;
 end;
 
 //==============================================================================
