@@ -58,6 +58,7 @@ type
 
     procedure UpdateProgress(a_dProgress : Double);
     procedure AddTrack      (a_nTrackID  : Integer);
+    procedure RemoveTrack   (a_nTrackID  : Integer);
 
   end;
 
@@ -113,6 +114,27 @@ begin
   vtTrack.SetLine(m_lstVisualObjects.Count);
 
   m_lstVisualObjects.Add(vtTrack);
+end;
+
+//==============================================================================
+procedure TPlaylistSurface.RemoveTrack(a_nTrackID : Integer);
+var
+  nIndex   : Integer;
+  voObject : TVisualObject;
+begin
+  inherited;
+
+  for nIndex := 0 to m_lstVisualObjects.Count - 1 do
+  begin
+    voObject := m_lstVisualObjects.Items[nIndex];
+
+    if (voObject is TVisualTrack) then
+    begin
+      m_lstVisualObjects.Remove(voObject);
+      (voObject as TVisualTrack).Free;
+      Break;
+    end
+  end;
 end;
 
 //==============================================================================

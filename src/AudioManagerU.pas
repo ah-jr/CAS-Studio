@@ -27,6 +27,7 @@ type
 
     procedure BroadcastProgress(a_dProgress : Double);
     procedure BroadcastNewTrack(a_nTrackID : Integer);
+    procedure BroadcastRemoveTrack(a_nTrackID : Integer);
     procedure SetTrackPosition(a_nTrackID : Integer; a_nPosition : Integer);
 
     function  GetTrackSize(a_nTrackID   : Integer) : Integer;
@@ -100,6 +101,17 @@ begin
   for nIndex := 0 to m_lstListeners.Count - 1 do
   begin
     m_lstListeners.Items[nIndex].AddTrack(a_nTrackID);
+  end;
+end;
+
+//==============================================================================
+procedure TAudioManager.BroadcastRemoveTrack(a_nTrackID : Integer);
+var
+  nIndex : Integer;
+begin
+  for nIndex := 0 to m_lstListeners.Count - 1 do
+  begin
+    m_lstListeners.Items[nIndex].RemoveTrack(a_nTrackID);
   end;
 end;
 

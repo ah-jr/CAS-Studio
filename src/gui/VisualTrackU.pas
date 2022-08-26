@@ -52,6 +52,8 @@ implementation
 uses
   Winapi.Windows,
   System.UITypes,
+  System.Diagnostics,
+  System.TimeSpan,
   TypesU,
   Math;
 
@@ -114,8 +116,8 @@ var
   pntCurr : TD2D1Point2F;
   pntNext : TD2D1Point2F;
 
-  nFirstPointIdx : Integer;
-  nLastPointIdx : Integer;
+  Stopwatch: TStopwatch;
+  Elapsed: TTimeSpan;
 begin
   recSelf := GetRect;
 
@@ -152,24 +154,23 @@ begin
 //    m_d2dPath.Stream(m_d2dSink);
 //  end;
 
-  if (m_lstWavePoints.Count = 0) or
-     (pntScaleChange.X > 2) or
-     (pntScaleChange.X < 0.5) then
-  begin
-    CalculateWaveSink;
-    pntScaleChange.X := 1;
-  end;
+//  if (m_lstWavePoints.Count = 0) or
+//     (pntScaleChange.X > 2) or
+//     (pntScaleChange.X < 0.5) then
+//  begin
+//    CalculateWaveSink;
+//    pntScaleChange.X := 1;
+//  end;
 
-  nFirstPointIdx := 0;
-  nLastPointIdx  := m_lstWavePoints.Count - 2;
+//  if (m_lstWavePoints.Count = 0) then
+  //Stopwatch := TStopwatch.StartNew;
+  CalculateWaveSink;
+  //Elapsed := Stopwatch.Elapsed;
 
-  if recSelf.Left < 0 then
-    nFirstPointIdx := Trunc((-recSelf.Left/recSelf.Width) * nLastPointIdx);
+  pntScaleChange := PointF(pntScale.X/m_dPathScale, pntScale.Y);
 
-  if recSelf.Right > m_pmManager.GetPlaylistRect.Width then
-    nLastPointIdx := Ceil(((m_pmManager.GetPlaylistRect.Width - recSelf.Left)/recSelf.Width) * nLastPointIdx);
-
-  for nIndex := nFirstPointIdx to nLastPointIdx do
+  Stopwatch := TStopwatch.StartNew;
+  for nIndex := 0 to m_lstWavePoints.Count - 2 do
   begin
     pntCurr.X := m_lstWavePoints.Items[nIndex].X * pntScaleChange.X;
     pntCurr.Y := m_lstWavePoints.Items[nIndex].Y;
@@ -178,8 +179,9 @@ begin
     pntNext.Y := m_lstWavePoints.Items[nIndex + 1].Y;
 
     a_d2dKit.Target.DrawLine(pntCurr, pntNext, a_d2dKit.Brush, 1);
-  end;
 
+  end;
+  Elapsed := Stopwatch.Elapsed;
 
 //  d2dMatrix := TD2DMatrix3x2F.Scale(pntScale.X/m_dPathScale, 1, D2D1PointF(0, 0));
 //  a_d2dKit.Factory.CreateTransformedGeometry(m_d2dPath, d2dMatrix, d2dScaledPath);
@@ -267,12 +269,14 @@ var
   nPathSize    : Integer;
   pData        : PIntArray;
   nDataSize    : Integer;
+  nFirstPointIdx : Integer;
+  nLastPointIdx  : Integer;
 const
   DATAOFFSET = 0;//5;
   m_nTitleBarHeight = 0;
 begin
   recSelf      := GetRect;
-  nPathSize    := Trunc(10*recSelf.Width);
+  nPathSize    := Trunc(4*recSelf.Width);
   pData        := nil;
 
   m_pmManager.GetTrackData(m_nTrackID, pData, pData, nDataSize);
@@ -283,17 +287,27 @@ begin
   dTrackRatio  := nDataSize / nPathSize;
   nAmplitude   := (recSelf.Height - m_nTitleBarHeight - 10) div 2;
   nOffset      := (recSelf.Height + m_nTitleBarHeight) div 2;
-  nMax         := 1;
+  nMax         := Trunc(Math.Power(2, 24)); // FIX THAT
   pntPrev.X    := DATAOFFSET;
   pntPrev.Y    := nOffset;
   bSwitch      := True;
 
-  for nTrackIdx := 0 to nDataSize - 1 do
-    nMax := Max(nMax, Abs(TIntArray(pData^)[nTrackIdx]));
+//  for nTrackIdx := 0 to nDataSize -1 do
+//    nMax := Max(nMax, Abs(TIntArray(pData^)[nTrackIdx]));
+
+  //////////////////////////////////////////////////////////////////////////////
+  nFirstPointIdx := 0;
+  nLastPointIdx  := nPathSize - 1;
+
+  if recSelf.Left < 0 then
+    nFirstPointIdx := Trunc((-recSelf.Left/recSelf.Width) * nLastPointIdx);
+
+  if recSelf.Right > m_pmManager.GetPlaylistRect.Width then
+    nLastPointIdx := Ceil(((m_pmManager.GetPlaylistRect.Width - recSelf.Left)/recSelf.Width) * nLastPointIdx);
 
   //////////////////////////////////////////////////////////////////////////////
   // Narrow down data to fit in the PATHSIZE
-  for nTrackIdx := 0 to nPathSize - 1 do
+  for nTrackIdx := nFirstPointIdx to nLastPointIdx do
   begin
     nFragIdx := 0;
 

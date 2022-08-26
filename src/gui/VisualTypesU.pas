@@ -11,7 +11,7 @@ const
   //////////////////////////////////////////////////////////////////////////////
   ///  PlaylistSurface
   c_nBarWidth   = 100;
-  c_nLineHeight = 50;
+  c_nLineHeight = 150;
 
   c_nBarSplit   = 16;
 

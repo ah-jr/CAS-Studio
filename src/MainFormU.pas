@@ -820,6 +820,8 @@ begin
   begin
     m_CasEngine.Position := m_CasEngine.Position - CasTrack.Size;
     m_CasEngine.DeleteTrack(CasTrack.ID);
+
+    m_AudioManager.BroadcastRemoveTrack(CasTrack.ID);
   end;
 
   m_lstTracks.Remove((Sender as TAcrylicButton).Parent as TAcrylicGhostPanel);

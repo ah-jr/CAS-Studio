@@ -17,7 +17,8 @@ const
 type
   IAudioListener = interface
     procedure UpdateProgress(a_dProgress : Double);
-    procedure AddTrack(a_nTrackID : Integer);
+    procedure AddTrack      (a_nTrackID : Integer);
+    procedure RemoveTrack   (a_nTrackID  : Integer);
   end;
 
   TIntArray = Array of Integer;
