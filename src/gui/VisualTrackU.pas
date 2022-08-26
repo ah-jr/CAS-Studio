@@ -21,9 +21,12 @@ type
     m_pmManager  : TPlaylistManager;
     m_nHeight    : Integer;
     m_nPosition  : Integer;
-    m_pgWaveForm : ID2D1PathGeometry;
+    m_d2dSink    : ID2D1GeometrySink;
+    m_d2dPath    : ID2D1PathGeometry;
+    m_dPathScale : Double;
+    m_bUpdatePath: Boolean;
 
-    function CalculateWavePath : ID2D1PathGeometry;
+  procedure CalculateWaveSink(a_d2dSink : ID2D1GeometrySink);
 
   public
     constructor Create(a_piInfo : TPlaylistManager; a_nTrackID : Integer);
@@ -58,10 +61,10 @@ begin
   Inherited Create;
   m_nTrackID   := a_nTrackID;
   m_pmManager  := a_piInfo;
-  m_pgWaveForm := CalculateWavePath;
-
-  m_nPosition := 0;
-  m_nHeight   := 0;
+  m_nPosition  := 0;
+  m_nHeight    := 0;
+  m_d2dSink    := nil;
+  m_bUpdatePath:= False;
 end;
 
 //==============================================================================
@@ -83,7 +86,7 @@ var
   d2dRect : TD2D1RectF;
   recSelf : TRect;
 begin
-  a_d2dKit.D2D1Brush.SetColor(D2D1ColorF(clBlack));
+  a_d2dKit.Brush.SetColor(D2D1ColorF(clBlack, 0.9));
   recSelf := GetRect;
 
   d2dRect.Left   := recSelf.Left;
@@ -91,7 +94,7 @@ begin
   d2dRect.Right  := d2dRect.Left + recSelf.Width;
   d2dRect.Bottom := d2dRect.Top  + recSelf.Height;
 
-  a_d2dKit.Canvas.RenderTarget.FillRectangle(d2dRect, a_d2dKit.D2D1Brush);
+  a_d2dKit.Target.FillRectangle(d2dRect, a_d2dKit.Brush);
 
   PaintWavePath(a_d2dKit);
 end;
@@ -99,16 +102,16 @@ end;
 //==============================================================================
 procedure TVisualTrack.PaintWavePath(a_d2dKit : TD2DKit);
 var
-  sspProp : TD2D1StrokeStyleProperties;
-  ssStyle : ID2D1StrokeStyle;
-  Factory : ID2D1Factory;
-  Matrix  : TD2DMatrix3x2F;
-  recSelf : TRect;
+  sspProp   : TD2D1StrokeStyleProperties;
+  ssStyle   : ID2D1StrokeStyle;
+  recSelf   : TRect;
+  d2dMatrix : TD2DMatrix3x2F;
+  pntScale  : TPointF;
+  d2dScaledPath : ID2D1TransformedGeometry;
 begin
-  recSelf := GetRect;                  m_pgWaveForm:= CalculateWavePath;
-  Matrix  := TD2DMatrix3x2F.Translation(recSelf.Left, recSelf.Top);
+  recSelf := GetRect;
 
-  a_d2dKit.D2D1Brush.SetColor(D2D1ColorF(clWhite));
+  a_d2dKit.Brush.SetColor(D2D1ColorF(clWhite));
 
   sspProp.StartCap   := D2D1_CAP_STYLE_ROUND;
   sspProp.EndCap     := D2D1_CAP_STYLE_ROUND;
@@ -118,13 +121,30 @@ begin
   sspProp.DashStyle  := D2D1_DASH_STYLE_SOLID;
   sspProp.DashOffset := 0;
 
-  a_d2dKit.Canvas.RenderTarget.GetFactory(Factory);
-  Factory.CreateStrokeStyle(sspProp, nil, 0, ssStyle);
+  a_d2dKit.Factory.CreateStrokeStyle(sspProp, nil, 0, ssStyle);
+  a_d2dKit.Target.SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-  a_d2dKit.Canvas.RenderTarget.SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-  a_d2dKit.Canvas.RenderTarget.SetTransform(Matrix);
-  a_d2dKit.Canvas.RenderTarget.DrawGeometry(m_pgWaveForm, a_d2dKit.D2D1Brush, 2, ssStyle);
-  a_d2dKit.Canvas.RenderTarget.SetTransform(TD2DMatrix3x2F.Identity);
+  pntScale := m_pmManager.Transform.Scale;
+  d2dMatrix := TD2DMatrix3x2F.Translation(recSelf.Left, recSelf.Top);
+  a_d2dKit.Target.SetTransform(d2dMatrix);
+
+  if (m_d2dPath = nil) or (m_bUpdatePath) then
+  begin
+    a_d2dKit.Factory.CreatePathGeometry(m_d2dPath);
+    m_d2dPath.Open(m_d2dSink);
+    CalculateWaveSink(m_d2dSink);
+    m_bUpdatePath := False;
+  end
+  else
+  begin
+    m_d2dPath.Stream(m_d2dSink);
+  end;
+
+  d2dMatrix := TD2DMatrix3x2F.Scale(pntScale.X/m_dPathScale, 1, D2D1PointF(0, 0));
+  a_d2dKit.Factory.CreateTransformedGeometry(m_d2dPath, d2dMatrix, d2dScaledPath);
+
+  a_d2dKit.Target.DrawGeometry(d2dScaledPath, a_d2dKit.Brush, 1.5, ssStyle);
+  a_d2dKit.Target.SetTransform(TD2DMatrix3x2F.Identity);
 end;
 
 //==============================================================================
@@ -188,7 +208,7 @@ begin
 end;
 
 //==============================================================================
-function TVisualTrack.CalculateWavePath : ID2D1PathGeometry;
+procedure TVisualTrack.CalculateWaveSink(a_d2dSink : ID2D1GeometrySink);
 var
   recSelf      : TRect;
   nTrackIdx    : Integer;
@@ -204,7 +224,6 @@ var
   pntPrev      : TPointF;
   pntCurr      : TPointF;
   nPathSize    : Integer;
-  gsSink       : ID2D1GeometrySink;
   pData        : PIntArray;
   nDataSize    : Integer;
 const
@@ -212,11 +231,12 @@ const
   m_nTitleBarHeight = 0;
 begin
   recSelf      := GetRect;
-  nPathSize    := recSelf.Width;
+  nPathSize    := Trunc(6*recSelf.Width);
   pData        := nil;
 
   m_pmManager.GetTrackData(m_nTrackID, pData, pData, nDataSize);
 
+  m_dPathScale := m_pmManager.Transform.Scale.X;
   dScreenRatio := (recSelf.Width - 2 * DATAOFFSET) / nPathSize;
   dTrackRatio  := nDataSize / nPathSize;
   nAmplitude   := (recSelf.Height - m_nTitleBarHeight - 10) div 2;
@@ -229,11 +249,8 @@ begin
   for nTrackIdx := 0 to nDataSize - 1 do
     nMax := Max(nMax, Abs(TIntArray(pData^)[nTrackIdx]));
 
-  D2DFactory.CreatePathGeometry(Result);
-  Result.Open(gsSink);
-  gsSink.SetFillMode(D2D1_FILL_MODE_WINDING);
-
-  gsSink.BeginFigure(D2D1PointF(DATAOFFSET, nOffset), D2D1_FIGURE_BEGIN_FILLED);
+  a_d2dSink.SetFillMode(D2D1_FILL_MODE_WINDING);
+  a_d2dSink.BeginFigure(D2D1PointF(DATAOFFSET, nOffset), D2D1_FIGURE_BEGIN_FILLED);
 
   //////////////////////////////////////////////////////////////////////////////
   // Narrow down data to fit in the PATHSIZE
@@ -263,7 +280,7 @@ begin
     pntCurr.X := nTrackIdx * dScreenRatio + DATAOFFSET;
     pntCurr.Y := nAmplitude * (nAverage/nMax) + nOffset;
 
-    gsSink.AddLine(D2D1PointF(pntCurr.X, pntCurr.Y));
+    a_d2dSink.AddLine(D2D1PointF(pntCurr.X, pntCurr.Y));
 
     pntPrev.X := pntCurr.X;
     pntPrev.Y := pntCurr.Y;
@@ -271,8 +288,8 @@ begin
     bSwitch := not bSwitch;
   end;
 
-  gsSink.EndFigure(D2D1_FIGURE_END_OPEN);
-  gsSink.Close;
+  a_d2dSink.EndFigure(D2D1_FIGURE_END_OPEN);
+  a_d2dSink.Close;
 end;
 
 end.

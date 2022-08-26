@@ -36,7 +36,9 @@ type
     procedure WMEraseBkgnd (var Msg: TWmEraseBkgnd); message WM_ERASEBKGND;
     procedure CMMouseWheel (var Msg: TCMMouseWheel); message CM_MOUSEWHEEL;
 
-    procedure Invalidate(a_nInterval : Integer); overload;
+    procedure Invalidate(a_nInterval : Integer); reintroduce; overload;
+
+    procedure SetupD2DOBjects;
 
   protected
     procedure Paint; override;
@@ -76,6 +78,8 @@ begin
   m_dtUpdate  := Now;
 
   m_lstVisualObjects := TList<TVisualObject>.Create;
+
+  SetupD2DOBjects;
 end;
 
 //==============================================================================
@@ -113,14 +117,17 @@ end;
 //==============================================================================
 procedure TPlaylistSurface.PaintBackground;
 var
-  d2dRect    : TD2D1RectF;
+  d2dRect : TD2D1RectF;
 begin
   d2dRect.Left   := 0;
   d2dRect.Top    := 0;
   d2dRect.Right  := ClientWidth;
   d2dRect.Bottom := ClientHeight;
 
-  m_d2dKit.Canvas.RenderTarget.FillRectangle(d2dRect, m_d2dKit.D2D1Brush);
+  m_d2dKit.Target.Clear(D2D1ColorF(clBlack));
+
+  m_d2dKit.Brush.SetColor(D2D1ColorF(clDkGray, 1));
+  m_d2dKit.Target.FillRectangle(d2dRect, m_d2dKit.Brush);
 end;
 
 //==============================================================================
@@ -130,15 +137,15 @@ var
   pntDown : TPoint;
   nIndex  : Integer;
 begin
-  m_d2dKit.Canvas.RenderTarget.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-  m_d2dKit.D2D1Brush.SetColor(D2D1ColorF(clWhite));
+  m_d2dKit.Target.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+  m_d2dKit.Brush.SetColor(D2D1ColorF(clWhite));
 
   for nIndex := 0 to 10 do
   begin
     pntUp   := Point(Trunc(m_pmManager.BeatToX(nIndex)), 0);
     pntDown := Point(Trunc(m_pmManager.BeatToX(nIndex)), Height);
 
-    m_d2dKit.Canvas.RenderTarget.DrawLine(pntUp, pntDown, m_d2dKit.D2D1Brush);
+    m_d2dKit.Target.DrawLine(pntUp, pntDown, m_d2dKit.Brush);
   end;
 
   for nIndex := 0 to 10 do
@@ -146,7 +153,7 @@ begin
     pntUp   := Point(0,     nIndex*c_nLineHeight);
     pntDown := Point(Width, nIndex*c_nLineHeight);
 
-    m_d2dKit.Canvas.RenderTarget.DrawLine(pntUp, pntDown, m_d2dKit.D2D1Brush);
+    m_d2dKit.Target.DrawLine(pntUp, pntDown, m_d2dKit.Brush);
   end;
 end;
 
@@ -167,7 +174,7 @@ var
   pntUp   : TD2DPoint2f;
   pntDown : TD2DPoint2f;
 begin
-  m_d2dKit.Canvas.RenderTarget.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+  m_d2dKit.Target.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
   pntUp.X := m_pmManager.GetProgressX;
   pntUp.Y := 0;
@@ -175,73 +182,27 @@ begin
   pntDown.X := m_pmManager.GetProgressX;
   pntDown.Y := Height;
 
-  m_d2dKit.D2D1Brush.SetColor(D2D1ColorF(clBlue));
-  m_d2dKit.Canvas.RenderTarget.DrawLine(pntUp, pntDown, m_d2dKit.D2D1Brush);
+  m_d2dKit.Brush.SetColor(D2D1ColorF(clBlue));
+  m_d2dKit.Target.DrawLine(pntUp, pntDown, m_d2dKit.Brush);
 end;
 
 //==============================================================================
 procedure TPlaylistSurface.Paint;
 var
-  d2dBProp : TD2D1BrushProperties;
-
-  r : TD2D1RenderTargetProperties;
-  t : ID2D1DCRenderTarget;
-  f : ID2D1Factory;
-  rec : TRect;
-
-  d2dRect    : TD2D1RectF;
+  recSelf : TRect;
 begin
+  recSelf := GetClientRect;
 
-  d2dBProp.Transform := TD2DMatrix3X2F.Identity;
-  d2dBProp.Opacity := 1;
+  m_d2dKit.Target.BindDC(Canvas.Handle, recSelf);
+  m_d2dKit.Target.BeginDraw;
+  m_d2dKit.Target.SetTransform(TD2DMatrix3X2F.Identity);
 
-  m_d2dKit.Canvas := TDirect2DCanvas.Create(Handle);
-//  m_d2dKit.Canvas.RenderTarget.CreateSolidColorBrush(D2D1ColorF(clGray), @d2dBProp, m_d2dKit.D2D1Brush);
-//  m_d2dKit.Canvas.BeginDraw;
+  PaintBackground;
+  PaintGrid;
+  PaintVisualObjects;
+  PaintPosLine;
 
-  //=======================
-
-  r.&type := D2D1_RENDER_TARGET_TYPE_DEFAULT;
-  r.pixelFormat := D2D1PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE);
-  r.dpiX := 0;
-  r.dpiY := 0;
-  r.usage := D2D1_RENDER_TARGET_USAGE_NONE;
-  r.minLevel := D2D1_FEATURE_LEVEL_DEFAULT;
-
-  D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_ID2D1Factory, nil, f);
-
-  f.CreateDCRenderTarget(r, t);
-
-  rec := GetClientRect;
-  t.BindDC(Canvas.Handle, rec);
-
-  t.BeginDraw;
-
-  t.SetTransform(TD2DMatrix3X2F.Identity);
-
-  d2dRect.Left   := 0;
-  d2dRect.Top    := 0;
-  d2dRect.Right  := ClientWidth;
-  d2dRect.Bottom := ClientHeight;
-
-  t.CreateSolidColorBrush(D2D1ColorF(clBlue, 1), @d2dBProp, m_d2dKit.D2D1Brush);
-
-  m_d2dKit.D2D1Brush.SetColor(D2D1ColorF(clBlack));
-  t.FillRectangle(d2dRect, m_d2dKit.D2D1Brush);
-  m_d2dKit.D2D1Brush.SetColor(D2D1ColorF(clBlue, 0.3));
-  t.FillRectangle(d2dRect, m_d2dKit.D2D1Brush);
-
-  t.EndDraw;
-
-  //=======================
-
-//  PaintBackground;
-//  PaintGrid;
-//  PaintVisualObjects;
-//  PaintPosLine;
-//
-//  m_d2dKit.Canvas.EndDraw;
-  m_d2dKit.Canvas.Free;
+  m_d2dKit.Target.EndDraw;
 end;
 
 //==============================================================================
@@ -311,11 +272,22 @@ const
 begin
   Inherited;
 
-  if Msg.WheelDelta > 0 then
-    m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset - c_ntDeltaOffset);
+  if ssShift in Msg.ShiftState then
+  begin
+    if Msg.WheelDelta > 0 then
+      m_pmManager.Transform.SetScale(PointF(m_pmManager.Transform.Scale.X * 1.2, m_pmManager.Transform.Scale.Y));
 
-  if Msg.WheelDelta < 0 then
-    m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset + c_ntDeltaOffset);
+    if Msg.WheelDelta < 0 then
+      m_pmManager.Transform.SetScale(PointF(m_pmManager.Transform.Scale.X / 1.2, m_pmManager.Transform.Scale.Y));
+  end
+  else
+  begin
+    if Msg.WheelDelta > 0 then
+      m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset - c_ntDeltaOffset);
+
+    if Msg.WheelDelta < 0 then
+      m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset + c_ntDeltaOffset);
+  end;
 
   Invalidate(10);
 end;
@@ -328,6 +300,27 @@ begin
     Invalidate;
     m_dtUpdate := Now;
   end;
+end;
+
+//==============================================================================
+procedure TPlaylistSurface.SetupD2DObjects;
+var
+  d2dBProp  : TD2D1BrushProperties;
+  d2dRTProp : TD2D1RenderTargetProperties;
+begin
+  d2dRTProp.&type       := D2D1_RENDER_TARGET_TYPE_DEFAULT;
+  d2dRTProp.pixelFormat := D2D1PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE);
+  d2dRTProp.dpiX        := 0;
+  d2dRTProp.dpiY        := 0;
+  d2dRTProp.usage       := D2D1_RENDER_TARGET_USAGE_NONE;
+  d2dRTProp.minLevel    := D2D1_FEATURE_LEVEL_DEFAULT;
+  D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_ID2D1Factory, nil, m_D2DKit.Factory);
+
+  m_D2DKit.Factory.CreateDCRenderTarget(d2dRTProp, m_D2DKit.Target);
+
+  d2dBProp.Transform := TD2DMatrix3X2F.Identity;
+  d2dBProp.Opacity   := 1;
+  m_D2DKit.Target.CreateSolidColorBrush(D2D1ColorF(clWhite), @d2dBProp, m_d2dKit.Brush);
 end;
 
 end.

@@ -18,10 +18,9 @@ const
 type
 
   TD2DKit = record
-    Canvas     : TDirect2DCanvas;
-    D2D1Brush  : ID2D1SolidColorBrush;
-    Brush      : TDirect2DBrush;
-    Pen        : TDirect2DPen;
+    Brush   : ID2D1SolidColorBrush;
+    Target  : ID2D1DCRenderTarget;
+    Factory : ID2D1Factory;
   end;
 
   TVisualTransform = record
