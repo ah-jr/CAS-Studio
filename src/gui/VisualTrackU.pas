@@ -105,7 +105,7 @@ var
   Matrix  : TD2DMatrix3x2F;
   recSelf : TRect;
 begin
-  recSelf := GetRect;
+  recSelf := GetRect;                  m_pgWaveForm:= CalculateWavePath;
   Matrix  := TD2DMatrix3x2F.Translation(recSelf.Left, recSelf.Top);
 
   a_d2dKit.D2D1Brush.SetColor(D2D1ColorF(clWhite));
@@ -212,7 +212,7 @@ const
   m_nTitleBarHeight = 0;
 begin
   recSelf      := GetRect;
-  nPathSize    := 4*recSelf.Width;
+  nPathSize    := recSelf.Width;
   pData        := nil;
 
   m_pmManager.GetTrackData(m_nTrackID, pData, pData, nDataSize);
