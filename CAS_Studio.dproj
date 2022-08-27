@@ -116,6 +116,9 @@
         <DCCReference Include="src\gui\VisualObjectU.pas"/>
         <DCCReference Include="src\gui\VisualTrackU.pas"/>
         <DCCReference Include="src\gui\VisualTypesU.pas"/>
+        <DCCReference Include="src\gui\VisualUtilsU.pas">
+            <Form>/ Managers</Form>
+        </DCCReference>
         <DCCReference Include="src\bus\PlaylistManagerU.pas"/>
         <DCCReference Include="src\frames\InfoFrameU.pas"/>
         <DCCReference Include="src\frames\PlaylistFrameU.pas"/>

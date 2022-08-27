@@ -18,8 +18,9 @@ const
 type
 
   TD2DKit = record
+    Setup   : Boolean;
     Brush   : ID2D1SolidColorBrush;
-    Target  : ID2D1DCRenderTarget;
+    Target  : ID2D1HwndRenderTarget;
     Factory : ID2D1Factory;
   end;
 

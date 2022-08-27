@@ -18,6 +18,7 @@ uses
   VisualObjectU in 'src\gui\VisualObjectU.pas',
   VisualTrackU  in 'src\gui\VisualTrackU.pas',
   VisualTypesU  in 'src\gui\VisualTypesU.pas',
+  VisualUtilsU  in 'src\gui\VisualUtilsU.pas',
 
   // Managers
   PlaylistManagerU   in 'src\bus\PlaylistManagerU.pas',

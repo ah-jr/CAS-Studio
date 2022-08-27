@@ -15,6 +15,12 @@ uses
   PlaylistManagerU;
 
 type
+//  TWaveMapThread = class(TThread)
+//  private
+//    m_bmpPaint : TBitmap;
+//
+//  end;
+
 
   TVisualTrack = class(TVisualObject)
   private
@@ -26,7 +32,14 @@ type
     m_dPathScale : Double;
     m_bUpdatePath: Boolean;
 
+    Brush   : ID2D1SolidColorBrush;
+    Target  : ID2D1DCRenderTarget;
+    Factory : ID2D1Factory;
+
+    bmpWaveForm : VCL.Graphics.TBitmap;
+
   procedure CalculateWaveSink;
+  procedure SetupD2DObjects;
 
   public
     constructor Create(a_piInfo : TPlaylistManager; a_nTrackID : Integer);
@@ -51,9 +64,11 @@ implementation
 
 uses
   Winapi.Windows,
+  Winapi.DxgiFormat,
   System.UITypes,
   System.Diagnostics,
   System.TimeSpan,
+  VisualUtilsU,
   TypesU,
   Math;
 
@@ -68,11 +83,18 @@ begin
   m_bUpdatePath:= False;
 
   m_lstWavePoints := TList<TPointF>.Create;
+
+  bmpWaveForm := VCL.Graphics.TBitmap.Create;         SetupD2DObjects;
+  bmpWaveForm.PixelFormat := pf32Bit;
+  bmpWaveForm.HandleType :=  bmDIB;
+  bmpWaveForm.alphaformat := afDefined;
 end;
 
 //==============================================================================
 destructor TVisualTrack.Destroy;
 begin
+  bmpWaveForm.Free;
+
   Inherited;
 end;
 
@@ -105,34 +127,22 @@ end;
 //==============================================================================
 procedure TVisualTrack.PaintWavePath(a_d2dKit : TD2DKit);
 var
-  sspProp   : TD2D1StrokeStyleProperties;
-  ssStyle   : ID2D1StrokeStyle;
   recSelf   : TRect;
   d2dMatrix : TD2DMatrix3x2F;
   pntScale  : TPointF;
   pntScaleChange : TPointF;
   //d2dScaledPath : ID2D1TransformedGeometry;
   nIndex : Integer;
-  pntCurr : TD2D1Point2F;
-  pntNext : TD2D1Point2F;
 
   Stopwatch: TStopwatch;
   Elapsed: TTimeSpan;
+
+  d2dBmp : ID2D1Bitmap;
+
+  dc : hdc;
+  rec : TRect;                 d2dRect : TD2D1RectF;         nVisibleWidth : Integer;
 begin
   recSelf := GetRect;
-
-  a_d2dKit.Brush.SetColor(D2D1ColorF(clWhite));
-
-  sspProp.StartCap   := D2D1_CAP_STYLE_ROUND;
-  sspProp.EndCap     := D2D1_CAP_STYLE_ROUND;
-  sspProp.DashCap    := D2D1_CAP_STYLE_ROUND;
-  sspProp.LineJoin   := D2D1_LINE_JOIN_ROUND;
-  sspProp.MiterLimit := 10;
-  sspProp.DashStyle  := D2D1_DASH_STYLE_SOLID;
-  sspProp.DashOffset := 0;
-
-  a_d2dKit.Factory.CreateStrokeStyle(sspProp, nil, 0, ssStyle);
-  a_d2dKit.Target.SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
   pntScale := m_pmManager.Transform.Scale;
 
@@ -164,24 +174,65 @@ begin
 
 //  if (m_lstWavePoints.Count = 0) then
   //Stopwatch := TStopwatch.StartNew;
-  CalculateWaveSink;
+
   //Elapsed := Stopwatch.Elapsed;
 
-  pntScaleChange := PointF(pntScale.X/m_dPathScale, pntScale.Y);
+  nVisibleWidth := recSelf.Width;
 
-  Stopwatch := TStopwatch.StartNew;
-  for nIndex := 0 to m_lstWavePoints.Count - 2 do
+  if recSelf.Left < 0 then
+    nVisibleWidth := nVisibleWidth + recSelf.Left;
+
+  if recSelf.Right > m_pmManager.GetPlaylistRect.Width then
+    nVisibleWidth := nVisibleWidth - (recSelf.Right - m_pmManager.GetPlaylistRect.Width);
+
+  if (nVisibleWidth > 0) and
+     ((m_dPathScale = 0) or
+     (pntScaleChange.X > 1.2) or
+     (pntScaleChange.X < 0.8)) then
   begin
-    pntCurr.X := m_lstWavePoints.Items[nIndex].X * pntScaleChange.X;
-    pntCurr.Y := m_lstWavePoints.Items[nIndex].Y;
+    bmpWaveForm.SetSize(nVisibleWidth, recSelf.Height);
 
-    pntNext.X := m_lstWavePoints.Items[nIndex + 1].X * pntScaleChange.X;
-    pntNext.Y := m_lstWavePoints.Items[nIndex + 1].Y;
+    CalculateWaveSink;
 
-    a_d2dKit.Target.DrawLine(pntCurr, pntNext, a_d2dKit.Brush, 1);
+    //bmpWaveForm.SetSize(nVisibleWidth, recSelf.Height);
+    bmpWaveForm.Canvas.Brush.Color := $000000;
+    bmpWaveForm.Canvas.Rectangle(0, 0, nVisibleWidth, recSelf.Height);
 
+    dc := bmpWaveForm.Canvas.Handle;
+
+    rec.Left := 0;
+    rec.Top := 0;
+    rec.Width := bmpWaveForm.Width;
+    rec.Height := bmpWaveForm.Height;
+
+    Target.BindDC(dc, rec);
+    Target.BeginDraw;
+
+    Brush.SetColor(D2D1ColorF(clWhite));
+    Target.SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+    pntScaleChange := PointF(pntScale.X/m_dPathScale, pntScale.Y);
+
+    Stopwatch := TStopwatch.StartNew;
+    for nIndex := 0 to m_lstWavePoints.Count - 2 do
+    begin
+      Target.DrawLine(D2D1PointF(m_lstWavePoints.Items[nIndex].X * pntScaleChange.X,
+                                 m_lstWavePoints.Items[nIndex].Y),
+                      D2D1PointF(m_lstWavePoints.Items[nIndex + 1].X * pntScaleChange.X,
+                                 m_lstWavePoints.Items[nIndex + 1].Y),
+                      Brush, 1.5);
+    end;
+    Elapsed := Stopwatch.Elapsed;
+    Target.EndDraw;
   end;
-  Elapsed := Stopwatch.Elapsed;
+
+  d2dRect.Left := 0;
+  d2dRect.Top := 0;
+  d2dRect.Right := bmpWaveForm.Width * pntScaleChange.X;
+  d2dRect.Bottom := recSelf.Height;
+
+  d2dBmp := CreateD2DBitmap(a_d2dKit.Target, bmpWaveForm);
+  a_d2dKit.Target.DrawBitmap(d2dBmp, @d2dRect);
 
 //  d2dMatrix := TD2DMatrix3x2F.Scale(pntScale.X/m_dPathScale, 1, D2D1PointF(0, 0));
 //  a_d2dKit.Factory.CreateTransformedGeometry(m_d2dPath, d2dMatrix, d2dScaledPath);
@@ -276,7 +327,7 @@ const
   m_nTitleBarHeight = 0;
 begin
   recSelf      := GetRect;
-  nPathSize    := Trunc(4*recSelf.Width);
+  nPathSize    := Trunc(10*recSelf.Width);
   pData        := nil;
 
   m_pmManager.GetTrackData(m_nTrackID, pData, pData, nDataSize);
@@ -340,6 +391,31 @@ begin
 
     bSwitch := not bSwitch;
   end;
+end;
+
+//==============================================================================
+procedure TVisualTrack.SetupD2DObjects;
+var
+  d2dBProp      : TD2D1BrushProperties;
+  d2dRTProp     : TD2D1RenderTargetProperties;
+
+  resSelf : TRect;
+begin
+  resSelf := GetRect;
+
+  d2dRTProp.&type       := D2D1_RENDER_TARGET_TYPE_DEFAULT;
+  d2dRTProp.pixelFormat := D2D1PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE);
+  d2dRTProp.dpiX        := 0;
+  d2dRTProp.dpiY        := 0;
+  d2dRTProp.usage       := D2D1_RENDER_TARGET_USAGE_NONE;
+  d2dRTProp.minLevel    := D2D1_FEATURE_LEVEL_DEFAULT;
+
+  D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_ID2D1Factory, nil, Factory);
+  Factory.CreateDCRenderTarget(d2dRTProp, Target);
+
+  d2dBProp.Transform := TD2DMatrix3X2F.Identity;
+  d2dBProp.Opacity   := 1;
+  Target.CreateSolidColorBrush(D2D1ColorF(clWhite), @d2dBProp, Brush);
 end;
 
 end.
