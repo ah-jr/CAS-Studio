@@ -66,8 +66,6 @@ implementation
 
 uses
   System.Types,
-  System.Diagnostics,
-  System.TimeSpan,
   Winapi.DxgiFormat,
   DateUtils,
   VisualTrackU,
@@ -83,7 +81,7 @@ begin
 
   m_lstVisualObjects := TList<TVisualObject>.Create;
 
-  m_d2dKit.Setup := False;
+  SetupD2DOBjects;
 end;
 
 //==============================================================================
@@ -214,31 +212,18 @@ end;
 //==============================================================================
 procedure TPlaylistSurface.Paint;
 var
-  recSelf      : TRect;
-  d2dPixelSize :  TD2D1SizeU;
-  Stopwatch    : TStopwatch;
-  Elapsed      : TTimeSpan;
+  recSelf : TRect;
 begin
   recSelf := GetClientRect;
 
-  if not m_d2dKit.Setup then
-    SetupD2DObjects;
-
-  d2dPixelSize.Width := ClientRect.Width;
-  d2dPixelSize.Height := ClientRect.Height;
-  m_d2dKit.Target.Resize(d2dPixelSize);
-
+  m_d2dKit.Target.BindDC(Canvas.Handle, recSelf);
   m_d2dKit.Target.BeginDraw;
   m_d2dKit.Target.SetTransform(TD2DMatrix3X2F.Identity);
-
-  Stopwatch := TStopwatch.StartNew;
 
   PaintBackground;
   PaintGrid;
   PaintVisualObjects;
   PaintPosLine;
-
-  Elapsed := Stopwatch.Elapsed;
 
   m_d2dKit.Target.EndDraw;
 end;
@@ -334,8 +319,6 @@ end;
 procedure TPlaylistSurface.WMNCSize(var Msg: TWMSize);
 begin
   m_pmManager.SetPlaylistRect(ClientRect);
-
-  m_pmManager.Transform.SetScale(PointF(Width/1000, 1));
 end;
 
 //==============================================================================
@@ -351,10 +334,8 @@ end;
 //==============================================================================
 procedure TPlaylistSurface.SetupD2DObjects;
 var
-  d2dBProp      : TD2D1BrushProperties;
-  d2dRTProp     : TD2D1RenderTargetProperties;
-  d2dHwndRTProp : TD2D1HwndRenderTargetProperties;
-  d2dPixelSize  :  TD2D1SizeU;
+  d2dBProp  : TD2D1BrushProperties;
+  d2dRTProp : TD2D1RenderTargetProperties;
 begin
   d2dRTProp.&type       := D2D1_RENDER_TARGET_TYPE_DEFAULT;
   d2dRTProp.pixelFormat := D2D1PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE);
@@ -362,21 +343,13 @@ begin
   d2dRTProp.dpiY        := 0;
   d2dRTProp.usage       := D2D1_RENDER_TARGET_USAGE_NONE;
   d2dRTProp.minLevel    := D2D1_FEATURE_LEVEL_DEFAULT;
-
-  d2dPixelSize.Width := ClientRect.Width;
-  d2dPixelSize.Height := ClientRect.Height;
-  d2dHwndRTProp.hwnd := Handle;
-  d2dHwndRTProp.pixelSize := d2dPixelSize;
-  d2dHwndRTProp.presentOptions := D2D1_PRESENT_OPTIONS_NONE;
-
   D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_ID2D1Factory, nil, m_D2DKit.Factory);
-  m_D2DKit.Factory.CreateHwndRenderTarget(d2dRTProp, d2dHwndRTProp, m_D2DKit.Target);
+
+  m_D2DKit.Factory.CreateDCRenderTarget(d2dRTProp, m_D2DKit.Target);
 
   d2dBProp.Transform := TD2DMatrix3X2F.Identity;
   d2dBProp.Opacity   := 1;
   m_D2DKit.Target.CreateSolidColorBrush(D2D1ColorF(clWhite), @d2dBProp, m_d2dKit.Brush);
-
-  m_d2dKit.Setup := True;
 end;
 
 end.
