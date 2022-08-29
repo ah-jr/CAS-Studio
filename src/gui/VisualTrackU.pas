@@ -16,6 +16,12 @@ uses
 
 type
 
+  TVisualAvgPoint = record
+    Pos: Integer;
+    Max: Integer;
+    Min: Integer;
+  end;
+
   TVisualTrack = class(TVisualObject)
   private
     m_nTrackID   : Integer;
@@ -26,7 +32,10 @@ type
     m_dPathScale : Double;
     m_bUpdatePath: Boolean;
 
+    m_lstAvgPoints : TList<TVisualAvgPoint>;
+
   procedure CalculateWaveSink;
+  procedure CreateAvgPointsList;
 
   public
     constructor Create(a_piInfo : TPlaylistManager; a_nTrackID : Integer);
@@ -66,11 +75,16 @@ begin
   m_bUpdatePath := False;
 
   m_lstWavePoints := TList<TPointF>.Create;
+  m_lstAvgPoints  := TList<TVisualAvgPoint>.Create;
+
+  CreateAvgPointsList;
 end;
 
 //==============================================================================
 destructor TVisualTrack.Destroy;
 begin
+  m_lstWavePoints.Free;
+
   Inherited;
 end;
 
@@ -113,7 +127,7 @@ var
 begin
   recSelf := GetRect;
 
-  a_d2dKit.Brush.SetColor(D2D1ColorF(clWhite));
+  a_d2dKit.Brush.SetColor(D2D1ColorF($BEB4A0));
   a_d2dKit.Target.SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
   d2dMatrix := TD2DMatrix3x2F.Translation(recSelf.Left, recSelf.Top);
@@ -132,7 +146,7 @@ begin
     pntNext.X := m_lstWavePoints.Items[nIndex + 1].X * pntScaleChange.X;
     pntNext.Y := m_lstWavePoints.Items[nIndex + 1].Y;
 
-    a_d2dKit.Target.DrawLine(pntCurr, pntNext, a_d2dKit.Brush, 1);
+    a_d2dKit.Target.DrawLine(pntCurr, pntNext, a_d2dKit.Brush, 2);
   end;
 
   a_d2dKit.Target.SetTransform(TD2DMatrix3x2F.Identity);
@@ -199,32 +213,70 @@ begin
 end;
 
 //==============================================================================
+procedure TVisualTrack.CreateAvgPointsList;
+var
+  pData          : PIntArray;
+  nDataSize      : Integer;
+  avgPoint       : TVisualAvgPoint;
+  nIndex      : Integer;
+  nMax : Integer;
+  nMin : Integer;
+  nPos : Integer;
+const
+  c_nAvgSplit = 10000;
+begin
+  m_pmManager.GetTrackData(m_nTrackID, pData, pData, nDataSize);
+  nPos := 0;
+  nMin :=  MaxInt;
+  nMax := -MaxInt;
+
+  for nIndex := 0 to nDataSize - 1 do
+  begin
+    nPos := nIndex;
+    nMax := Max(TIntArray(pData^)[nIndex], nMax);
+    nMin := Min(TIntArray(pData^)[nIndex], nMin);
+
+    if (nPos + c_nAvgSplit < nIndex) then
+    begin
+      avgPoint.Pos := nPos;
+      avgPoint.Min := nMin;
+      avgPoint.Max := nMax;
+
+      m_lstAvgPoints.Add(avgPoint);
+
+      nPos :=  nIndex;
+      nMin :=  MaxInt;
+      nMax := -MaxInt;
+    end;
+  end;
+end;
+
+//==============================================================================
 procedure TVisualTrack.CalculateWaveSink;
 var
   recSelf        : TRect;
   nTrackIdx      : Integer;
   nFragIdx       : Integer;
   nMax           : Integer;
-  nAverage       : Integer;
+  nLocMin        : Integer;
+  nLocMax        : Integer;
   nCurrent       : Integer;
   nAmplitude     : Integer;
   nOffset        : Integer;
-  bSwitch        : Boolean;
   dTrackRatio    : Double;
   dScreenRatio   : Double;
-  pntPrev        : TPointF;
   pntCurr        : TPointF;
   nPathSize      : Integer;
   pData          : PIntArray;
   nDataSize      : Integer;
   nFirstPointIdx : Integer;
-  nLastPointIdx  : Integer;
+  nLastPointIdx  : Integer;                    nMinPos, nMaxPos : Integer;   nFirst, nSec, nThird : Integer;     nSecPos, nTrdPos : Integer;
 const
   DATAOFFSET = 0;
   m_nTitleBarHeight = 0;
 begin
   recSelf      := GetRect;
-  nPathSize    := Trunc(4*recSelf.Width);
+  nPathSize    := Trunc(recSelf.Width);
   pData        := nil;
 
   m_pmManager.GetTrackData(m_nTrackID, pData, pData, nDataSize);
@@ -236,9 +288,6 @@ begin
   nAmplitude   := (recSelf.Height - m_nTitleBarHeight - 10) div 2;
   nOffset      := (recSelf.Height + m_nTitleBarHeight) div 2;
   nMax         := Trunc(Math.Power(2, 24 - 1)); // FIX THAT
-  pntPrev.X    := DATAOFFSET;
-  pntPrev.Y    := nOffset;
-  bSwitch      := True;
 
   //////////////////////////////////////////////////////////////////////////////
   nFirstPointIdx := 0;
@@ -256,34 +305,61 @@ begin
   begin
     nFragIdx := 0;
 
-    if bSwitch then
-      nAverage :=  MaxInt
-    else
-      nAverage := -MaxInt;
+    nLocMin :=  MaxInt;
+    nLocMax := -MaxInt;
 
-    while nFragIdx < dTrackRatio do
+    nFirst := TIntArray(pData^)[Round(nTrackIdx * dTrackRatio) + nFragIdx];
+
+    while nFragIdx <= Ceil(dTrackRatio) do
     begin
       //////////////////////////////////////////////////////////////////////////
       // Get the largest value in the samples covered
-      nCurrent := TIntArray(pData^)[Round(nTrackIdx * dTrackRatio) + nFragIdx];
+      nCurrent := TIntArray(pData^)[Ceil(nTrackIdx * dTrackRatio) + nFragIdx];
 
-      if bSwitch then
-        nAverage := Min(nCurrent, nAverage)
-      else
-        nAverage := Max(nCurrent, nAverage);
+      if nLocMin > nCurrent then
+      begin
+        nLocMin := nCurrent;
+        nMinPos := nFragIdx;
+      end;
 
-      Inc(nFragIdx);
+      if nLocMax < nCurrent then
+      begin
+        nLocMax := nCurrent;
+        nMaxPos := nFragIdx;
+      end;
+
+      nFragIdx := nFragIdx + 1;
     end;
 
-    pntCurr.X := nTrackIdx * dScreenRatio + DATAOFFSET;
-    pntCurr.Y := nAmplitude * (nAverage/nMax) + nOffset;
+    if nMaxPos >= nMinPos then
+    begin
+      nSec := nLocMin;
+      nThird   := nLocMax;
+      nSecPos := nMinPos;
+      nTrdPos := nMaxPos;
+    end
+    else
+    begin
+      nSec := nLocMax;
+      nThird   := nLocMin;
+      nSecPos := nMaxPos;
+      nTrdPos := nMinPos;
+    end;
 
+    if (nFirst <> nSec) then
+    begin
+      pntCurr.X := nTrackIdx * dScreenRatio + DATAOFFSET;
+      pntCurr.Y := nAmplitude * (nFirst/nMax) + nOffset;
+      m_lstWavePoints.Add(pntCurr);
+    end;
+
+    pntCurr.X := nTrackIdx * dScreenRatio + DATAOFFSET + (nSecPos/nFragIdx);
+    pntCurr.Y := nAmplitude * (nSec/nMax) + nOffset;
     m_lstWavePoints.Add(pntCurr);
 
-    pntPrev.X := pntCurr.X;
-    pntPrev.Y := pntCurr.Y;
-
-    bSwitch := not bSwitch;
+    pntCurr.X := nTrackIdx * dScreenRatio + DATAOFFSET + (nTrdPos/nFragIdx);
+    pntCurr.Y := nAmplitude * (nThird/nMax) + nOffset;
+    m_lstWavePoints.Add(pntCurr);
   end;
 end;
 
