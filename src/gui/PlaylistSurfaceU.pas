@@ -69,6 +69,7 @@ uses
   Winapi.DxgiFormat,
   DateUtils,
   VisualTrackU,
+  Math,
   CasTrackU;
 
 //==============================================================================
@@ -102,7 +103,7 @@ procedure TPlaylistSurface.UpdateProgress(a_dProgress : Double);
 begin
   m_pmManager.Progress := a_dProgress;
 
-  Invalidate(10);
+  Invalidate(20);
 end;
 
 //==============================================================================
@@ -279,7 +280,7 @@ begin
     end
   end;
 
-  Invalidate(10);
+  Invalidate(20);
 end;
 
 //==============================================================================
@@ -290,6 +291,8 @@ end;
 
 //==============================================================================
 procedure TPlaylistSurface.CMMouseWheel(var Msg: TCMMouseWheel);
+var
+  nDeltaOffset : Integer;
 const
   c_ntDeltaOffset = 10;
 begin
@@ -305,19 +308,30 @@ begin
   end
   else
   begin
+    nDeltaOffset := Trunc(c_ntDeltaOffset / m_pmManager.Transform.Scale.X);
+    nDeltaOffset := Max(nDeltaOffset, 1);
+
     if Msg.WheelDelta > 0 then
-      m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset - c_ntDeltaOffset);
+      m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset - nDeltaOffset);
 
     if Msg.WheelDelta < 0 then
-      m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset + c_ntDeltaOffset);
+      m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset + nDeltaOffset);
   end;
 
-  Invalidate(10);
+  Invalidate(20);
 end;
 
 //==============================================================================
 procedure TPlaylistSurface.WMNCSize(var Msg: TWMSize);
+var
+  dScaleChange : Double;
 begin
+  if m_pmManager.GetPlaylistRect.Width <> 0 then
+  begin
+    dScaleChange := ClientRect.Width/m_pmManager.GetPlaylistRect.Width;
+    m_pmManager.Transform.SetScale(PointF(m_pmManager.Transform.Scale.X * dScaleChange, 1));
+  end;
+
   m_pmManager.SetPlaylistRect(ClientRect);
 end;
 

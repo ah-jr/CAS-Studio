@@ -17,9 +17,10 @@ uses
 type
 
   TVisualAvgPoint = record
-    Pos: Integer;
     Max: Integer;
     Min: Integer;
+    MaxPos : Integer;
+    MinPos : Integer;
   end;
 
   TVisualTrack = class(TVisualObject)
@@ -32,10 +33,12 @@ type
     m_dPathScale : Double;
     m_bUpdatePath: Boolean;
 
-    m_lstAvgPoints : TList<TVisualAvgPoint>;
+    m_dctAvgPoints10   : TDictionary<Integer, TVisualAvgPoint>;
+    m_dctAvgPoints100  : TDictionary<Integer, TVisualAvgPoint>;
+    m_dctAvgPoints1000 : TDictionary<Integer, TVisualAvgPoint>;
 
   procedure CalculateWaveSink;
-  procedure CreateAvgPointsList;
+  procedure CreateAvgPointsList(a_dctAvgPoints : TDictionary<Integer, TVisualAvgPoint>; a_nInterval : Integer);
 
   public
     constructor Create(a_piInfo : TPlaylistManager; a_nTrackID : Integer);
@@ -60,7 +63,7 @@ implementation
 
 uses
   Winapi.Windows,
-  System.UITypes,
+  System.UITypes,                                       System.Diagnostics, System.TimeSpan,
   TypesU,
   Math;
 
@@ -75,15 +78,23 @@ begin
   m_bUpdatePath := False;
 
   m_lstWavePoints := TList<TPointF>.Create;
-  m_lstAvgPoints  := TList<TVisualAvgPoint>.Create;
+  m_dctAvgPoints10   := TDictionary<Integer, TVisualAvgPoint>.Create;
+  m_dctAvgPoints100  := TDictionary<Integer, TVisualAvgPoint>.Create;
+  m_dctAvgPoints1000 := TDictionary<Integer, TVisualAvgPoint>.Create;
 
-  CreateAvgPointsList;
+  CreateAvgPointsList(m_dctAvgPoints10, 10);
+  CreateAvgPointsList(m_dctAvgPoints100, 100);
+  CreateAvgPointsList(m_dctAvgPoints1000, 1000);
 end;
 
 //==============================================================================
 destructor TVisualTrack.Destroy;
 begin
   m_lstWavePoints.Free;
+
+  m_dctAvgPoints10.Free;
+  m_dctAvgPoints100.Free;
+  m_dctAvgPoints1000.Free;
 
   Inherited;
 end;
@@ -123,7 +134,7 @@ var
   pntScaleChange : TPointF;
   nIndex         : Integer;
   pntCurr        : TD2D1Point2F;
-  pntNext        : TD2D1Point2F;
+  pntNext        : TD2D1Point2F;                    a : TStopwatch;  e: TTimespan;
 begin
   recSelf := GetRect;
 
@@ -133,7 +144,8 @@ begin
   d2dMatrix := TD2DMatrix3x2F.Translation(recSelf.Left, recSelf.Top);
   a_d2dKit.Target.SetTransform(d2dMatrix);
 
-  CalculateWaveSink;
+  a := TStopwatch.StartNew;
+  CalculateWaveSink;             e := a.Elapsed;
 
   pntScale := m_pmManager.Transform.Scale;
   pntScaleChange := PointF(pntScale.X/m_dPathScale, pntScale.Y);
@@ -213,7 +225,7 @@ begin
 end;
 
 //==============================================================================
-procedure TVisualTrack.CreateAvgPointsList;
+procedure TVisualTrack.CreateAvgPointsList(a_dctAvgPoints : TDictionary<Integer, TVisualAvgPoint>; a_nInterval : Integer);
 var
   pData          : PIntArray;
   nDataSize      : Integer;
@@ -221,9 +233,9 @@ var
   nIndex      : Integer;
   nMax : Integer;
   nMin : Integer;
+  nMaxPos : Integer;
+  nMinPos : Integer;
   nPos : Integer;
-const
-  c_nAvgSplit = 10000;
 begin
   m_pmManager.GetTrackData(m_nTrackID, pData, pData, nDataSize);
   nPos := 0;
@@ -232,23 +244,39 @@ begin
 
   for nIndex := 0 to nDataSize - 1 do
   begin
-    nPos := nIndex;
-    nMax := Max(TIntArray(pData^)[nIndex], nMax);
-    nMin := Min(TIntArray(pData^)[nIndex], nMin);
-
-    if (nPos + c_nAvgSplit < nIndex) then
+    if nMax < TIntArray(pData^)[nIndex] then
     begin
-      avgPoint.Pos := nPos;
+      nMax := TIntArray(pData^)[nIndex];
+      nMaxPos := nIndex - nPos;
+    end;
+    
+    if nMin > TIntArray(pData^)[nIndex] then
+    begin
+      nMin := TIntArray(pData^)[nIndex];
+      nMinPos := nIndex - nPos;
+    end;
+
+    if (nPos + a_nInterval <= nIndex) then
+    begin
       avgPoint.Min := nMin;
       avgPoint.Max := nMax;
+      avgPoint.MinPos := nMinPos;
+      avgPoint.MaxPos := nMaxPos;
 
-      m_lstAvgPoints.Add(avgPoint);
+      a_dctAvgPoints.AddOrSetValue(nPos, avgPoint);
 
       nPos :=  nIndex;
       nMin :=  MaxInt;
       nMax := -MaxInt;
     end;
   end;
+
+  avgPoint.Min := nMin;
+  avgPoint.Max := nMax;
+  avgPoint.MinPos := nMinPos;
+  avgPoint.MaxPos := nMaxPos;
+
+  a_dctAvgPoints.AddOrSetValue(nPos, avgPoint);
 end;
 
 //==============================================================================
@@ -262,14 +290,14 @@ var
   nLocMax        : Integer;
   nCurrent       : Integer;
   nAmplitude     : Integer;
-  nOffset        : Integer;
+  nOffset        : Integer;                                            tmin, tmax :  Integer;
   dTrackRatio    : Double;
   dScreenRatio   : Double;
-  pntCurr        : TPointF;
+  pntCurr        : TPointF;                          size : Integer;                               mod10, mod100, mod1000 : Integer;
   nPathSize      : Integer;
-  pData          : PIntArray;
+  pData          : PIntArray;                     avgPoint : TVisualAvgPoint;
   nDataSize      : Integer;
-  nFirstPointIdx : Integer;
+  nFirstPointIdx : Integer;                            mode : Integer;
   nLastPointIdx  : Integer;                    nMinPos, nMaxPos : Integer;   nFirst, nSec, nThird : Integer;     nSecPos, nTrdPos : Integer;
 const
   DATAOFFSET = 0;
@@ -279,7 +307,7 @@ begin
   nPathSize    := Trunc(recSelf.Width);
   pData        := nil;
 
-  m_pmManager.GetTrackData(m_nTrackID, pData, pData, nDataSize);
+  m_pmManager.GetTrackData(m_nTrackID, pData, pData, nDataSize);                       size := 10;
 
   m_lstWavePoints.Clear;
   m_dPathScale := m_pmManager.Transform.Scale.X;
@@ -308,27 +336,76 @@ begin
     nLocMin :=  MaxInt;
     nLocMax := -MaxInt;
 
-    nFirst := TIntArray(pData^)[Round(nTrackIdx * dTrackRatio) + nFragIdx];
+    nFirst := TIntArray(pData^)[Ceil(nTrackIdx * dTrackRatio)];
+
+    mod1000 := Ceil(nTrackIdx * dTrackRatio) mod 1000;
+    mod100  := Ceil(nTrackIdx * dTrackRatio) mod 100;
+    mod10   := Ceil(nTrackIdx * dTrackRatio) mod 10;
+
+    mode := 1;
+
+    if 1000 < Ceil(dTrackRatio) - (1000 - mod1000) then
+    begin
+      nFragIdx := 1000 - mod1000;
+      mode := 1000;
+    end
+    else if 100 < Ceil(dTrackRatio) - (100 - mod100) then
+    begin
+      nFragIdx := 100 - mod100;
+      mode := 100;
+    end
+    else if 10 < Ceil(dTrackRatio) - (10 - mod10) then
+    begin
+      nFragIdx := 10 - mod10;
+      mode := 10;
+    end;
 
     while nFragIdx <= Ceil(dTrackRatio) do
     begin
       //////////////////////////////////////////////////////////////////////////
       // Get the largest value in the samples covered
-      nCurrent := TIntArray(pData^)[Ceil(nTrackIdx * dTrackRatio) + nFragIdx];
-
-      if nLocMin > nCurrent then
+      if mode = 1000 then
       begin
-        nLocMin := nCurrent;
-        nMinPos := nFragIdx;
+        avgPoint := m_dctAvgPoints1000[Ceil(nTrackIdx * dTrackRatio) + nFragIdx];
+        tmin := avgPoint.MinPos + nFragIdx;
+        tmax := avgPoint.MaxPos + nFragIdx;
+        nFragIdx := nFragIdx + 1000;
+      end
+      else if mode = 100 then
+      begin
+        avgPoint := m_dctAvgPoints100[Ceil(nTrackIdx * dTrackRatio) + nFragIdx];
+        tmin := avgPoint.MinPos + nFragIdx;
+        tmax := avgPoint.MaxPos + nFragIdx;
+        nFragIdx := nFragIdx + 100;
+      end
+      else if mode = 10 then
+      begin
+        avgPoint := m_dctAvgPoints10[Ceil(nTrackIdx * dTrackRatio) + nFragIdx];
+        tmin := avgPoint.MinPos + nFragIdx;
+        tmax := avgPoint.MaxPos + nFragIdx;
+        nFragIdx := nFragIdx + 10;
+      end
+      else
+      begin
+        avgPoint.Min := TIntArray(pData^)[Ceil(nTrackIdx * dTrackRatio) + nFragIdx];
+        avgPoint.Max := TIntArray(pData^)[Ceil(nTrackIdx * dTrackRatio) + nFragIdx];
+        tmin := nFragIdx;
+        tmax := nFragIdx;
+
+        nFragIdx := nFragIdx + 1;
       end;
 
-      if nLocMax < nCurrent then
+      if nLocMin > avgPoint.Min then
       begin
-        nLocMax := nCurrent;
-        nMaxPos := nFragIdx;
+        nLocMin := avgPoint.Min;
+        nMinPos := tmin;
       end;
 
-      nFragIdx := nFragIdx + 1;
+      if nLocMax < avgPoint.Max then
+      begin
+        nLocMax := avgPoint.Max;
+        nMaxPos := tmax;
+      end;
     end;
 
     if nMaxPos >= nMinPos then
@@ -353,11 +430,11 @@ begin
       m_lstWavePoints.Add(pntCurr);
     end;
 
-    pntCurr.X := nTrackIdx * dScreenRatio + DATAOFFSET + (nSecPos/nFragIdx);
+    pntCurr.X := nTrackIdx * dScreenRatio + DATAOFFSET + (nSecPos/dTrackRatio);
     pntCurr.Y := nAmplitude * (nSec/nMax) + nOffset;
     m_lstWavePoints.Add(pntCurr);
 
-    pntCurr.X := nTrackIdx * dScreenRatio + DATAOFFSET + (nTrdPos/nFragIdx);
+    pntCurr.X := nTrackIdx * dScreenRatio + DATAOFFSET + (nTrdPos/dTrackRatio);
     pntCurr.Y := nAmplitude * (nThird/nMax) + nOffset;
     m_lstWavePoints.Add(pntCurr);
   end;
