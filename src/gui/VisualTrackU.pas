@@ -63,7 +63,7 @@ implementation
 
 uses
   Winapi.Windows,
-  System.UITypes,                                       System.Diagnostics, System.TimeSpan,
+  System.UITypes,                               OpenGl,        System.Diagnostics, System.TimeSpan,
   TypesU,
   Math;
 
@@ -108,19 +108,19 @@ end;
 
 //==============================================================================
 procedure TVisualTrack.Paint(a_d2dKit : TD2DKit);
-var
-  d2dRect : TD2D1RectF;
-  recSelf : TRect;
+//var
+//  d2dRect : TD2D1RectF;
+//  recSelf : TRect;
 begin
-  a_d2dKit.Brush.SetColor(D2D1ColorF(clBlack, 0.9));
-  recSelf := GetRect;
-
-  d2dRect.Left   := recSelf.Left;
-  d2dRect.Top    := recSelf.Top;
-  d2dRect.Right  := d2dRect.Left + recSelf.Width;
-  d2dRect.Bottom := d2dRect.Top  + recSelf.Height;
-
-  a_d2dKit.Target.FillRectangle(d2dRect, a_d2dKit.Brush);
+//  a_d2dKit.Brush.SetColor(D2D1ColorF(clBlack, 0.9));
+//  recSelf := GetRect;
+//
+//  d2dRect.Left   := recSelf.Left;
+//  d2dRect.Top    := recSelf.Top;
+//  d2dRect.Right  := d2dRect.Left + recSelf.Width;
+//  d2dRect.Bottom := d2dRect.Top  + recSelf.Height;
+//
+//  a_d2dKit.Target.FillRectangle(d2dRect, a_d2dKit.Brush);
 
   PaintWavePath(a_d2dKit);
 end;
@@ -129,39 +129,47 @@ end;
 procedure TVisualTrack.PaintWavePath(a_d2dKit : TD2DKit);
 var
   recSelf        : TRect;
-  d2dMatrix      : TD2DMatrix3x2F;
+//  d2dMatrix      : TD2DMatrix3x2F;
   pntScale       : TPointF;
   pntScaleChange : TPointF;
   nIndex         : Integer;
   pntCurr        : TD2D1Point2F;
-  pntNext        : TD2D1Point2F;                    a : TStopwatch;  e: TTimespan;
+  pntNext        : TD2D1Point2F;
 begin
   recSelf := GetRect;
 
-  a_d2dKit.Brush.SetColor(D2D1ColorF($BEB4A0));
-  a_d2dKit.Target.SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+//  a_d2dKit.Brush.SetColor(D2D1ColorF($BEB4A0));
+//  a_d2dKit.Target.SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+//
+//  d2dMatrix := TD2DMatrix3x2F.Translation(recSelf.Left, recSelf.Top);
+//  a_d2dKit.Target.SetTransform(d2dMatrix);
 
-  d2dMatrix := TD2DMatrix3x2F.Translation(recSelf.Left, recSelf.Top);
-  a_d2dKit.Target.SetTransform(d2dMatrix);
-
-  a := TStopwatch.StartNew;
-  CalculateWaveSink;             e := a.Elapsed;
+  CalculateWaveSink;
 
   pntScale := m_pmManager.Transform.Scale;
   pntScaleChange := PointF(pntScale.X/m_dPathScale, pntScale.Y);
 
+  glColor4f($A0/$FF,$B4/$FF,$BE/$FF,1);
+  glLineWidth(2);
+  glBegin(GL_LINE_STRIP);
+
   for nIndex := 0 to m_lstWavePoints.Count - 2 do
   begin
-    pntCurr.X := m_lstWavePoints.Items[nIndex].X * pntScaleChange.X;
-    pntCurr.Y := m_lstWavePoints.Items[nIndex].Y;
+    pntCurr.X := recSelf.Left + m_lstWavePoints.Items[nIndex].X * pntScaleChange.X;
+    pntCurr.Y := recSelf.Top  + m_lstWavePoints.Items[nIndex].Y;
 
-    pntNext.X := m_lstWavePoints.Items[nIndex + 1].X * pntScaleChange.X;
-    pntNext.Y := m_lstWavePoints.Items[nIndex + 1].Y;
+    pntNext.X := recSelf.Left + m_lstWavePoints.Items[nIndex + 1].X * pntScaleChange.X;
+    pntNext.Y := recSelf.Top  + m_lstWavePoints.Items[nIndex + 1].Y;
 
-    a_d2dKit.Target.DrawLine(pntCurr, pntNext, a_d2dKit.Brush, 2);
+//    a_d2dKit.Target.DrawLine(pntCurr, pntNext, a_d2dKit.Brush, 2);
+
+    glVertex2f(pntCurr.X, pntCurr.Y);
+    glVertex2f(pntNext.X, pntNext.Y);
   end;
 
-  a_d2dKit.Target.SetTransform(TD2DMatrix3x2F.Identity);
+  glEnd();
+
+//  a_d2dKit.Target.SetTransform(TD2DMatrix3x2F.Identity);
 end;
 
 //==============================================================================
