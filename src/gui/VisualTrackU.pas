@@ -52,8 +52,6 @@ implementation
 uses
   Winapi.Windows,
   System.UITypes,
-  System.Diagnostics,
-  System.TimeSpan,
   TypesU,
   Math;
 
@@ -61,11 +59,11 @@ uses
 constructor TVisualTrack.Create(a_piInfo : TPlaylistManager; a_nTrackID : Integer);
 begin
   Inherited Create;
-  m_nTrackID   := a_nTrackID;
-  m_pmManager  := a_piInfo;
-  m_nPosition  := 0;
-  m_nHeight    := 0;
-  m_bUpdatePath:= False;
+  m_nTrackID    := a_nTrackID;
+  m_pmManager   := a_piInfo;
+  m_nPosition   := 0;
+  m_nHeight     := 0;
+  m_bUpdatePath := False;
 
   m_lstWavePoints := TList<TPointF>.Create;
 end;
@@ -105,71 +103,27 @@ end;
 //==============================================================================
 procedure TVisualTrack.PaintWavePath(a_d2dKit : TD2DKit);
 var
-  sspProp   : TD2D1StrokeStyleProperties;
-  ssStyle   : ID2D1StrokeStyle;
-  recSelf   : TRect;
-  d2dMatrix : TD2DMatrix3x2F;
-  pntScale  : TPointF;
+  recSelf        : TRect;
+  d2dMatrix      : TD2DMatrix3x2F;
+  pntScale       : TPointF;
   pntScaleChange : TPointF;
-  //d2dScaledPath : ID2D1TransformedGeometry;
-  nIndex : Integer;
-  pntCurr : TD2D1Point2F;
-  pntNext : TD2D1Point2F;
-
-  Stopwatch: TStopwatch;
-  Elapsed: TTimeSpan;
+  nIndex         : Integer;
+  pntCurr        : TD2D1Point2F;
+  pntNext        : TD2D1Point2F;
 begin
   recSelf := GetRect;
 
   a_d2dKit.Brush.SetColor(D2D1ColorF(clWhite));
-
-  sspProp.StartCap   := D2D1_CAP_STYLE_ROUND;
-  sspProp.EndCap     := D2D1_CAP_STYLE_ROUND;
-  sspProp.DashCap    := D2D1_CAP_STYLE_ROUND;
-  sspProp.LineJoin   := D2D1_LINE_JOIN_ROUND;
-  sspProp.MiterLimit := 10;
-  sspProp.DashStyle  := D2D1_DASH_STYLE_SOLID;
-  sspProp.DashOffset := 0;
-
-  a_d2dKit.Factory.CreateStrokeStyle(sspProp, nil, 0, ssStyle);
   a_d2dKit.Target.SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-  pntScale := m_pmManager.Transform.Scale;
-
-  if m_dPathScale > 0 then
-    pntScaleChange := PointF(pntScale.X/m_dPathScale, pntScale.Y);
 
   d2dMatrix := TD2DMatrix3x2F.Translation(recSelf.Left, recSelf.Top);
   a_d2dKit.Target.SetTransform(d2dMatrix);
 
-//  if (m_d2dPath = nil) or (m_bUpdatePath) then
-//  begin
-//    a_d2dKit.Factory.CreatePathGeometry(m_d2dPath);
-//    m_d2dPath.Open(m_d2dSink);
-//    CalculateWaveSink(m_d2dSink);
-//    m_bUpdatePath := False;
-//  end
-//  else
-//  begin
-//    m_d2dPath.Stream(m_d2dSink);
-//  end;
-
-//  if (m_lstWavePoints.Count = 0) or
-//     (pntScaleChange.X > 2) or
-//     (pntScaleChange.X < 0.5) then
-//  begin
-//    CalculateWaveSink;
-//    pntScaleChange.X := 1;
-//  end;
-
-//  if (m_lstWavePoints.Count = 0) then
-  //Stopwatch := TStopwatch.StartNew;
   CalculateWaveSink;
-  //Elapsed := Stopwatch.Elapsed;
 
+  pntScale := m_pmManager.Transform.Scale;
   pntScaleChange := PointF(pntScale.X/m_dPathScale, pntScale.Y);
 
-  Stopwatch := TStopwatch.StartNew;
   for nIndex := 0 to m_lstWavePoints.Count - 2 do
   begin
     pntCurr.X := m_lstWavePoints.Items[nIndex].X * pntScaleChange.X;
@@ -179,14 +133,8 @@ begin
     pntNext.Y := m_lstWavePoints.Items[nIndex + 1].Y;
 
     a_d2dKit.Target.DrawLine(pntCurr, pntNext, a_d2dKit.Brush, 1);
-
   end;
-  Elapsed := Stopwatch.Elapsed;
 
-//  d2dMatrix := TD2DMatrix3x2F.Scale(pntScale.X/m_dPathScale, 1, D2D1PointF(0, 0));
-//  a_d2dKit.Factory.CreateTransformedGeometry(m_d2dPath, d2dMatrix, d2dScaledPath);
-
-//  a_d2dKit.Target.DrawGeometry(d2dScaledPath, a_d2dKit.Brush, 1.5, ssStyle);
   a_d2dKit.Target.SetTransform(TD2DMatrix3x2F.Identity);
 end;
 
@@ -253,26 +201,26 @@ end;
 //==============================================================================
 procedure TVisualTrack.CalculateWaveSink;
 var
-  recSelf      : TRect;
-  nTrackIdx    : Integer;
-  nFragIdx     : Integer;
-  nMax         : Integer;
-  nAverage     : Integer;
-  nCurrent     : Integer;
-  nAmplitude   : Integer;
-  nOffset      : Integer;
-  bSwitch      : Boolean;
-  dTrackRatio  : Double;
-  dScreenRatio : Double;
-  pntPrev      : TPointF;
-  pntCurr      : TPointF;
-  nPathSize    : Integer;
-  pData        : PIntArray;
-  nDataSize    : Integer;
+  recSelf        : TRect;
+  nTrackIdx      : Integer;
+  nFragIdx       : Integer;
+  nMax           : Integer;
+  nAverage       : Integer;
+  nCurrent       : Integer;
+  nAmplitude     : Integer;
+  nOffset        : Integer;
+  bSwitch        : Boolean;
+  dTrackRatio    : Double;
+  dScreenRatio   : Double;
+  pntPrev        : TPointF;
+  pntCurr        : TPointF;
+  nPathSize      : Integer;
+  pData          : PIntArray;
+  nDataSize      : Integer;
   nFirstPointIdx : Integer;
   nLastPointIdx  : Integer;
 const
-  DATAOFFSET = 0;//5;
+  DATAOFFSET = 0;
   m_nTitleBarHeight = 0;
 begin
   recSelf      := GetRect;
@@ -287,13 +235,10 @@ begin
   dTrackRatio  := nDataSize / nPathSize;
   nAmplitude   := (recSelf.Height - m_nTitleBarHeight - 10) div 2;
   nOffset      := (recSelf.Height + m_nTitleBarHeight) div 2;
-  nMax         := Trunc(Math.Power(2, 24)); // FIX THAT
+  nMax         := Trunc(Math.Power(2, 24 - 1)); // FIX THAT
   pntPrev.X    := DATAOFFSET;
   pntPrev.Y    := nOffset;
   bSwitch      := True;
-
-//  for nTrackIdx := 0 to nDataSize -1 do
-//    nMax := Max(nMax, Abs(TIntArray(pData^)[nTrackIdx]));
 
   //////////////////////////////////////////////////////////////////////////////
   nFirstPointIdx := 0;
