@@ -349,6 +349,7 @@ end;
 procedure TPlaylistSurface.CMMouseWheel(var Msg: TCMMouseWheel);
 var
   nDeltaOffset : Integer;
+  pntMouse     : TPoint;
 const
   c_ntDeltaOffset = 10;
 begin
@@ -356,11 +357,24 @@ begin
 
   if ssShift in Msg.ShiftState then
   begin
+    pntMouse.X := Msg.XPos;
+    pntMouse.Y := Msg.YPos;
+    pntMouse := ScreenToClient(pntMouse);
+
+
     if Msg.WheelDelta > 0 then
+    begin
       m_pmManager.Transform.SetScale(PointF(m_pmManager.Transform.Scale.X * 1.2, m_pmManager.Transform.Scale.Y));
+      nDeltaOffset := Trunc(m_pmManager.Transform.Offset + (pntMouse.X/m_pmManager.Transform.Scale.X)*(0.2));
+      m_pmManager.Transform.SetOffset(nDeltaOffset);
+    end;
 
     if Msg.WheelDelta < 0 then
+    begin
+      nDeltaOffset := Trunc(m_pmManager.Transform.Offset - (pntMouse.X/m_pmManager.Transform.Scale.X)*(0.2));
       m_pmManager.Transform.SetScale(PointF(m_pmManager.Transform.Scale.X / 1.2, m_pmManager.Transform.Scale.Y));
+      m_pmManager.Transform.SetOffset(nDeltaOffset);
+    end;
   end
   else
   begin
