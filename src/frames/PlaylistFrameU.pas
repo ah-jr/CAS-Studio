@@ -64,8 +64,6 @@ begin
   m_Playlist.Top    := 0;
 
   m_AudioManager.AddListener(m_Playlist);
-
-  Visible := True;
 end;
 
 //==============================================================================

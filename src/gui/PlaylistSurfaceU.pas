@@ -272,6 +272,8 @@ begin
     bGlInit := True;
   end;
 
+  //wglMakeCurrent(DC, hrc);
+
   glViewport(0, 0, ClientWidth, ClientHeight);
   glLoadIdentity();
   glOrtho(0, ClientWidth, ClientHeight, 0, -1, 1);

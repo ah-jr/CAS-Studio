@@ -258,8 +258,8 @@ begin
 
   //////////////////////////////////////////////////////////////////////////////
   ///  PlaylistFrame
-  afFrame        := TPlaylistFrame.Create(Self, m_AudioManager);
-  afFrame.Parent := Self;
+  afFrame        := TPlaylistFrame.Create(sbTracks, m_AudioManager);
+  afFrame.Parent := sbTracks;
   afFrame.Left   := 10;
   afFrame.Top    := 10;
   afFrame.Width  := 300;

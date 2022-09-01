@@ -46,7 +46,6 @@ begin
   Width                   := 280;
   Height                  := 350;
   Title                   := 'Information';
-  Visible                 := False;
 
   lblTitle                := TAcrylicLabel.Create(Body);
   lblTitle.Parent         := Body;
