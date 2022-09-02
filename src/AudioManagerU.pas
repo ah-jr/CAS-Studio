@@ -5,6 +5,8 @@ interface
 uses
   System.Generics.Collections,
   CasEngineU,
+  CasTrackU,
+  CasTypesU,
   TypesU;
 
 type
@@ -36,6 +38,46 @@ type
                            var a_pRight : PIntArray;
                            var a_nSize  : Integer) : Boolean;
 
+    function GetTrackById(a_nID: Integer; var a_Castrack : TCasTrack) : Boolean;
+
+    //==========================================================================
+    // CasEngine Interface:
+    procedure Play;
+    procedure Pause;
+    procedure Stop;
+    procedure Prev;
+    procedure Next;
+    procedure GoToTrack(a_nID: Integer);
+
+    function  GetLevel      : Double;
+    function  GetPosition   : Integer;
+    function  GetProgress   : Double;
+    function  GetLength     : Integer;
+    function  GetReady      : Boolean;
+    function  GetPlaying    : Boolean;
+    function  GetSampleRate : Double;
+    function  GetBufferSize : Cardinal;
+    function  GetTime       : String;
+    function  GetDuration   : String;
+    function  GenerateID    : Integer;
+
+    function  GetActiveTracks : TList<Integer>;
+    function  GetTrackProgress(a_nTrackId : Integer) : Double;
+
+    procedure ControlPanel;
+    procedure SetLevel     (a_dLevel : Double);
+    procedure SetPosition  (a_nPosition : Integer);
+    procedure ChangeDriver (a_dtDriverType : TDriverType; a_nID : Integer);
+
+    function  AddTrackToPlaylist(a_nTrackId, a_nPosition : Integer) : Boolean;
+    function  AddTrack(a_CasTrack : TCasTrack; a_nMixerId : Integer) : Boolean;
+    procedure DeleteTrack(a_nTrackId : Integer);
+    procedure ClearTracks;
+    procedure CalculateBuffers(a_LeftOut : CasTypesU.PIntArray; a_RightOut : CasTypesU.PIntArray);
+
+    //==========================================================================
+
+
     property Engine    : TCasEngine read m_CasEngine write m_CasEngine;
     property BPM       : Double     read m_dBpm      write m_dBpm;
     property BeatCount : Double     read GetBeatCount;
@@ -45,7 +87,6 @@ type
 implementation
 
 uses
-  CasTrackU,
   UtilsU;
 
 //==============================================================================
@@ -152,6 +193,67 @@ begin
   end;
 end;
 
+//==============================================================================
+function TAudioManager.GetTrackById(a_nID: Integer; var a_Castrack : TCasTrack) : Boolean;
+begin
+  Result := m_CasEngine.Database.GetTrackByID(a_nID, a_CasTrack);
+end;
+
+//==========================================================================
+// CasEngine Interface:
+procedure TAudioManager.Play;  begin m_CasEngine.Play;  end;
+procedure TAudioManager.Pause; begin m_CasEngine.Pause; end;
+procedure TAudioManager.Stop;  begin m_CasEngine.Stop;  end;
+procedure TAudioManager.Prev;  begin m_CasEngine.Prev;  end;
+procedure TAudioManager.Next;  begin m_CasEngine.Next;  end;
+procedure TAudioManager.GoToTrack(a_nID: Integer);  begin m_CasEngine.GoToTrack(a_nID); end;
+
+function  TAudioManager.GetLevel      : Double;   begin Result := m_CasEngine.GetLevel; end;
+function  TAudioManager.GetPosition   : Integer;  begin Result := m_CasEngine.GetPosition; end;
+function  TAudioManager.GetProgress   : Double;   begin Result := m_CasEngine.GetProgress; end;
+function  TAudioManager.GetLength     : Integer;  begin Result := m_CasEngine.GetLength; end;
+function  TAudioManager.GetReady      : Boolean;  begin Result := m_CasEngine.GetReady; end;
+function  TAudioManager.GetPlaying    : Boolean;  begin Result := m_CasEngine.GetPlaying; end;
+function  TAudioManager.GetSampleRate : Double;   begin Result := m_CasEngine.GetSampleRate; end;
+function  TAudioManager.GetBufferSize : Cardinal; begin Result := m_CasEngine.GetBufferSize; end;
+function  TAudioManager.GetTime       : String;   begin Result := m_CasEngine.GetTime; end;
+function  TAudioManager.GetDuration   : String;   begin Result := m_CasEngine.GetDuration; end;
+function  TAudioManager.GenerateID    : Integer;  begin Result := m_CasEngine.GenerateID; end;
+
+function  TAudioManager.GetActiveTracks : TList<Integer>;
+begin Result := m_CasEngine.GetActiveTracks; end;
+
+function  TAudioManager.GetTrackProgress(a_nTrackId : Integer) : Double;
+begin Result := m_CasEngine.GetTrackProgress(a_nTrackId); end;
+
+procedure TAudioManager.ControlPanel;
+begin m_CasEngine.ControlPanel; end;
+
+procedure TAudioManager.SetLevel(a_dLevel : Double);
+begin m_CasEngine.SetLevel(a_dLevel); end;
+
+procedure TAudioManager.SetPosition(a_nPosition : Integer);
+begin m_CasEngine.SetPosition(a_nPosition); end;
+
+procedure TAudioManager.ChangeDriver(a_dtDriverType : TDriverType; a_nID : Integer);
+begin m_CasEngine.ChangeDriver(a_dtDriverType, a_nID); end;
+
+function  TAudioManager.AddTrackToPlaylist(a_nTrackId, a_nPosition : Integer) : Boolean;
+begin Result := m_CasEngine.AddTrackToPlaylist(a_nTrackId, a_nPosition); end;
+
+function  TAudioManager.AddTrack(a_CasTrack : TCasTrack; a_nMixerId : Integer) : Boolean;
+begin Result := m_CasEngine.AddTrack(a_CasTrack, a_nMixerId); end;
+
+procedure TAudioManager.DeleteTrack(a_nTrackId : Integer);
+begin m_CasEngine.DeleteTrack(a_nTrackId); end;
+
+procedure TAudioManager.ClearTracks;
+begin m_CasEngine.ClearTracks; end;
+
+procedure TAudioManager.CalculateBuffers(a_LeftOut : CasTypesU.PIntArray; a_RightOut : CasTypesU.PIntArray);
+begin m_CasEngine.CalculateBuffers(a_LeftOut, a_RightOut); end;
+
+//==========================================================================
 
 end.
 

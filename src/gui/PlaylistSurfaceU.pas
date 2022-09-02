@@ -274,7 +274,7 @@ begin
 
   //wglMakeCurrent(DC, hrc);
 
-  glViewport(0, 0, ClientWidth, ClientHeight);
+  glViewport(0, 0, ClientWidth, ClientHeight); ;
   glLoadIdentity();
   glOrtho(0, ClientWidth, ClientHeight, 0, -1, 1);
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
@@ -558,7 +558,7 @@ begin
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glLoadIdentity();
-  glOrtho(0, ClientWidth, 0, ClientHeight, -1, 1);
+  glOrtho(0, ClientWidth, ClientHeight, 0, -1, 1);
   glMatrixMode(GL_MODELVIEW);
 end;
 

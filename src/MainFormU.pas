@@ -264,6 +264,7 @@ begin
   afFrame.Top    := 10;
   afFrame.Width  := 300;
   afFrame.Height := 300;
+  afFrame.Visible := True;
   m_dctFrames.AddOrSetValue(FID_Playlist, afFrame);
 end;
 
@@ -277,7 +278,7 @@ begin
     m_bStartPlaying    := True;
     lblLoading.Visible := True;
 
-    m_CasDecoder.AsyncDecodeFile(Handle, m_lstFiles, m_CasEngine.SampleRate);
+    m_CasDecoder.AsyncDecodeFile(Handle, m_lstFiles, m_AudioManager.GetSampleRate);
   end;
 end;
 
@@ -335,7 +336,7 @@ begin
     btnPlayClick(nil);
 
   if GE_L(Key, $30, $3A) and ((Key - 49) <  m_lstTracks.Count) then
-    m_CasEngine.GoToTrack(StrToInt(String((m_lstTracks.Items[Key - 49] as TAcrylicGhostPanel).Name).SubString(3)));
+    m_AudioManager.GoToTrack(StrToInt(String((m_lstTracks.Items[Key - 49] as TAcrylicGhostPanel).Name).SubString(3)));
 end;
 
 //==============================================================================
@@ -391,9 +392,9 @@ begin
   for CasTrack in m_CasDecoder.Tracks do
   begin
     CasTrack.Level := 0.7;
-    CasTrack.ID    := m_CasEngine.GenerateID;
-    m_CasEngine.AddTrack(CasTrack, 0);
-    m_CasEngine.AddTrackToPlaylist(CasTrack.ID, m_CasEngine.Length);
+    CasTrack.ID    := m_AudioManager.GenerateID;
+    m_AudioManager.AddTrack(CasTrack, 0);
+    m_AudioManager.AddTrackToPlaylist(CasTrack.ID, m_AudioManager.GetLength);
     AddTrackInfo(CasTrack);
 
     m_AudioManager.BroadcastNewTrack(CasTrack.ID);
@@ -410,11 +411,11 @@ end;
 //==============================================================================
 procedure TMainForm.ChangeEnabledObjects;
 begin
-  btnOpenFile.Enabled           := (m_CasEngine.Ready);
-  btnDriverControlPanel.Enabled := (m_CasEngine.Ready) and
-                                   (m_CasEngine.DriverType = dtASIO);
+  btnOpenFile.Enabled           := (m_AudioManager.GetReady);
+  btnDriverControlPanel.Enabled := (m_AudioManager.GetReady) and
+                                   (m_AudioManager.Engine.DriverType = dtASIO);
 
-  btnPlay.Enabled               := (m_CasEngine.Ready) and
+  btnPlay.Enabled               := (m_AudioManager.GetReady) and
                                    (m_nLoadedTrackCount > 0);
 
   btnStop.Enabled               := (m_nLoadedTrackCount > 0);
@@ -436,8 +437,8 @@ begin
     then dtDriverType := dtDirectSound
     else dtDriverType := dtASIO;
 
-  m_CasEngine.ChangeDriver(dtDriverType, cbDriver.ItemIndex - 1);
-  m_CasEngine.AsyncUpdate := dtDriverType = dtDirectSound;
+  m_AudioManager.ChangeDriver(dtDriverType, cbDriver.ItemIndex - 1);
+  m_AudioManager.Engine.AsyncUpdate := dtDriverType = dtDirectSound;
 
   pngImage    := TPngImage.Create;
   pngImage.LoadFromResourceName(HInstance, 'btnPlay');
@@ -452,7 +453,7 @@ begin
   if odOpenFile.Execute then
   begin
     try
-      m_CasDecoder.AsyncDecodeFile(Handle, odOpenFile.Files, m_CasEngine.SampleRate);
+      m_CasDecoder.AsyncDecodeFile(Handle, odOpenFile.Files, m_AudioManager.GetSampleRate);
 
       lblLoading.Visible := True;
     finally
@@ -463,8 +464,8 @@ end;
 //==============================================================================
 procedure TMainForm.btnDriverControlPanelClick(Sender: TObject);
 begin
-  if m_CasEngine.Ready then
-    m_CasEngine.ControlPanel;
+  if m_AudioManager.GetReady then
+    m_AudioManager.ControlPanel;
 end;
 
 //==============================================================================
@@ -481,13 +482,13 @@ procedure TMainForm.btnPlayClick(Sender: TObject);
 var
   pngImage : TPngImage;
 begin
-  if m_CasEngine.Playing then
+  if m_AudioManager.GetPlaying then
   begin
     pngImage    := TPngImage.Create;
     pngImage.LoadFromResourceName(HInstance, 'btnPlay');
     btnPlay.Png := pngImage;
 
-    m_CasEngine.Pause;
+    m_AudioManager.Pause;
   end
   else
   begin
@@ -495,7 +496,7 @@ begin
     pngImage.LoadFromResourceName(HInstance, 'btnPause');
     btnPlay.Png := pngImage;
 
-    m_CasEngine.Play;
+    m_AudioManager.Play;
   end;
 
   ChangeEnabledObjects;
@@ -510,7 +511,7 @@ begin
   pngImage.LoadFromResourceName(HInstance, 'btnPlay');
   btnPlay.Png := pngImage;
 
-  m_CasEngine.Stop;
+  m_AudioManager.Stop;
   UpdateProgressBar;
   ChangeEnabledObjects;
 end;
@@ -518,7 +519,7 @@ end;
 //==============================================================================
 procedure TMainForm.btnPrevClick(Sender: TObject);
 begin
-  m_CasEngine.Prev;
+  m_AudioManager.Prev;
   UpdateProgressBar;
   ChangeEnabledObjects;
 end;
@@ -526,7 +527,7 @@ end;
 //==============================================================================
 procedure TMainForm.btnNextClick(Sender: TObject);
 begin
-  m_CasEngine.Next;
+  m_AudioManager.Next;
   UpdateProgressBar;
   ChangeEnabledObjects;
 end;
@@ -534,8 +535,8 @@ end;
 //==============================================================================
 procedure TMainForm.btnPrevDblClick(Sender: TObject);
 begin
-  m_CasEngine.Prev;
-  m_CasEngine.Prev;
+  m_AudioManager.Prev;
+  m_AudioManager.Prev;
   UpdateProgressBar;
   ChangeEnabledObjects;
 end;
@@ -566,13 +567,13 @@ begin
   if not m_bBlockBufferPositionUpdate then
   begin
     if m_bPlaylistBar then
-      m_CasEngine.Position := Trunc(tbProgress.Level * m_CasEngine.Length)
+      m_AudioManager.SetPosition(Trunc(tbProgress.Level * m_AudioManager.GetLength))
     else
     begin
-      if (m_CasEngine.ActiveTracks.Count > 0) and
-         (m_CasEngine.Database.GetTrackById(m_CasEngine.ActiveTracks.Items[0], CasTrack)) then
+      if (m_AudioManager.GetActiveTracks.Count > 0) and
+         (m_AudioManager.GetTrackById(m_AudioManager.GetActiveTracks.Items[0], CasTrack)) then
       begin
-        m_CasEngine.Position := CasTrack.Position + Trunc(tbProgress.Level * CasTrack.Size);
+        m_AudioManager.SetPosition(CasTrack.Position + Trunc(tbProgress.Level * CasTrack.Size));
       end;
     end;
   end;
@@ -588,36 +589,36 @@ begin
   m_bBlockBufferPositionUpdate := True;
   if m_bPlaylistBar then
   begin
-    tbProgress.Level := m_CasEngine.Progress;
-    lblTime.Text     := m_CasEngine.GetTime + '/' + m_CasEngine.GetDuration;
+    tbProgress.Level := m_AudioManager.GetProgress;
+    lblTime.Text     := m_AudioManager.GetTime + '/' + m_AudioManager.GetDuration;
   end
   else
   begin
-    if m_CasEngine.ActiveTracks.Count > 0 then
+    if m_AudioManager.GetActiveTracks.Count > 0 then
     begin
-      tbProgress.Level := m_CasEngine.GetTrackProgress(m_CasEngine.ActiveTracks.Items[0]);
-      lblTime.Text     := m_CasEngine.GetTime + '/' + m_CasEngine.GetDuration;
+      tbProgress.Level := m_AudioManager.GetTrackProgress(m_AudioManager.GetActiveTracks.Items[0]);
+      lblTime.Text     := m_AudioManager.GetTime + '/' + m_AudioManager.GetDuration;
     end
     else
     begin
       tbProgress.Level := 0;
-      lblTime.Text     := m_CasEngine.GetTime + '/' + m_CasEngine.GetDuration;
+      lblTime.Text     := m_AudioManager.GetTime + '/' + m_AudioManager.GetDuration;
     end;
   end;
   m_bBlockBufferPositionUpdate := False;
 
   for nPanelIdx := 0 to m_lstTracks.Count - 1 do
   begin
-    if m_CasEngine.Database.GetTrackByID(StrToInt(String((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Name).SubString(3)), CasTrack) then
+    if m_AudioManager.GetTrackByID(StrToInt(String((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Name).SubString(3)), CasTrack) then
     begin
-      dProgress := (m_CasEngine.Position - CasTrack.Position) / CasTrack.Size;
+      dProgress := (m_AudioManager.GetPosition - CasTrack.Position) / CasTrack.Size;
 
       ((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Controls[4] as TAcrylicTrack).Position := dProgress;
       ((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Controls[4] as TAcrylicTrack).Refresh;
     end;
   end;
 
-  m_AudioManager.BroadcastProgress(m_CasEngine.Progress);
+  m_AudioManager.BroadcastProgress(m_AudioManager.GetProgress);
 end;
 
 //==============================================================================
@@ -633,7 +634,7 @@ begin
   begin
     (m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Top := nPanelIdx * (c_nPanelGap + c_nPanelHeight) + c_nFirstPanelTop;
 
-    if m_CasEngine.Database.GetTrackByID(StrToInt(String((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Name).SubString(3)), CasTrack) then
+    if m_AudioManager.GetTrackByID(StrToInt(String((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Name).SubString(3)), CasTrack) then
     begin
       CasTrack.Position := TotalLength;
       TotalLength := TotalLength + CasTrack.Size;
@@ -807,7 +808,7 @@ begin
   AcrylicTrack.Name    := 'trkTrack_' + IntToStr(a_CasTrack.ID);
   AcrylicTrack.SetData(@a_CasTrack.RawData.Right, a_CasTrack.Size);
 
-  lblTime.Text := m_CasEngine.GetTime + '/' + m_CasEngine.GetDuration;
+  lblTime.Text := m_AudioManager.GetTime + '/' + m_AudioManager.GetDuration;
   Inc(m_nLoadedTrackCount);
 end;
 
@@ -816,10 +817,10 @@ procedure TMainForm.btnCloseClick(Sender : TObject);
 var
   CasTrack : TCasTrack;
 begin
-  if m_CasEngine.Database.GetTrackByID(StrToInt(String((Sender as TAcrylicButton).Parent.Name).SubString(3)), CasTrack) then
+  if m_AudioManager.GetTrackByID(StrToInt(String((Sender as TAcrylicButton).Parent.Name).SubString(3)), CasTrack) then
   begin
-    m_CasEngine.Position := m_CasEngine.Position - CasTrack.Size;
-    m_CasEngine.DeleteTrack(CasTrack.ID);
+    m_AudioManager.SetPosition(m_AudioManager.GetPosition - CasTrack.Size);
+    m_AudioManager.DeleteTrack(CasTrack.ID);
 
     m_AudioManager.BroadcastRemoveTrack(CasTrack.ID);
   end;
@@ -829,7 +830,7 @@ begin
   Dec(m_nLoadedTrackCount);
 
   if m_nLoadedTrackCount = 0 then
-    m_CasEngine.Stop;
+    m_AudioManager.Stop;
 
   RearrangeTracks;
   UpdateProgressBar;
@@ -842,12 +843,12 @@ var
   OriginalTrack : TCasTrack;
   NewTrack      : TCasTrack;
 begin
-  if m_CasEngine.Database.GetTrackByID(StrToInt(String((Sender as TAcrylicButton).Parent.Name).SubString(3)), OriginalTrack) then
+  if m_AudioManager.GetTrackByID(StrToInt(String((Sender as TAcrylicButton).Parent.Name).SubString(3)), OriginalTrack) then
   begin
     NewTrack       := OriginalTrack.Clone;
-    NewTrack.ID    := m_CasEngine.GenerateID;
-    m_CasEngine.AddTrack(NewTrack, 0);
-    m_CasEngine.AddTrackToPlaylist(NewTrack.ID, m_CasEngine.Length);
+    NewTrack.ID    := m_AudioManager.GenerateID;
+    m_AudioManager.AddTrack(NewTrack, 0);
+    m_AudioManager.AddTrackToPlaylist(NewTrack.ID, m_AudioManager.GetLength);
 
     AddTrackInfo(NewTrack);
 
@@ -880,7 +881,7 @@ end;
 //==============================================================================
 procedure TMainForm.trackClick(Sender : TObject);
 begin
-  m_CasEngine.GoToTrack(StrToInt(String((Sender as TAcrylicTrack).Parent.Name).SubString(3)));
+  m_AudioManager.GoToTrack(StrToInt(String((Sender as TAcrylicTrack).Parent.Name).SubString(3)));
   UpdateProgressBar;
 end;
 
