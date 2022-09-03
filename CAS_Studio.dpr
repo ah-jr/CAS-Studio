@@ -24,6 +24,7 @@ uses
 
   // Frames
   InfoFrameU      in 'src\frames\InfoFrameU.pas',
+  RackFrameU      in 'src\frames\RackFrameU.pas',
   PlaylistFrameU  in 'src\frames\PlaylistFrameU.pas',
 
   // Cas Libraries
