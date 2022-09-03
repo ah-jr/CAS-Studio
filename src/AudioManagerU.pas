@@ -36,6 +36,7 @@ type
     destructor  Destroy; override;
 
     procedure AsyncDecodeFile(a_lstFiles : TStrings);
+    procedure AudioExport(a_asOut : TAudioSpecs; a_strFileName : String);
 
     procedure AddListener(a_alListener : IAudioListener);
     procedure RemoveListener(a_alListener : IAudioListener);
@@ -175,6 +176,12 @@ end;
 procedure TAudioManager.AsyncDecodeFile(a_lstFiles : TStrings);
 begin
   m_CasDecoder.AsyncDecodeFile(m_hwndHandle, a_lstFiles, m_CasEngine.SampleRate);
+end;
+
+//==============================================================================
+procedure AudioExport(a_asOut : TAudioSpecs; a_strFileName : String);
+begin
+  //m_CasExport.Export(Engine.Playlist, a_asOut, a_strFileName);
 end;
 
 //==============================================================================

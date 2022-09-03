@@ -71,7 +71,6 @@ const
   c_nButtonTop1    = 1;
   c_nButtonTop2    = 29;
   c_nTrackOffset   = 61;
-  c_nBntBlurRight  = 150;
 
 implementation
 

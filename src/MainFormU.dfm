@@ -226,20 +226,6 @@ object MainForm: TMainForm
       OnClick = btnBlurClick
     end
   end
-  object sbTracks: TAcrylicScrollBox
-    Left = 26
-    Top = 150
-    Width = 445
-    Height = 121
-    Color = x001F1F1F
-    TabOrder = 10
-    Ghost = False
-    Colored = False
-    BackColor = 2039583
-    Bordercolor = claNull
-    WithBorder = False
-    ScrollColor = claWhite
-  end
   object knbLevel: TAcrylicKnob
     Left = 426
     Top = 56
@@ -409,6 +395,20 @@ object MainForm: TMainForm
     WithBackground = True
     Ghost = False
     OnClick = btnInfoClick
+  end
+  object pnlDesktop: TAcrylicGhostPanel
+    Left = 26
+    Top = 145
+    Width = 436
+    Height = 128
+    Caption = 'pnlDesktop'
+    Color = x001F1F1F
+    TabOrder = 18
+    Ghost = True
+    Colored = False
+    Backcolor = 2039583
+    Bordercolor = claNull
+    WithBorder = False
   end
   object odOpenFile: TOpenDialog
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]

@@ -32,18 +32,15 @@ uses
   ShellApi,
   IOUtils,
   GDIPOBJ,
-  CasTrackU,
-  CasConstantsU,
   AcrylicFormU,
   AcrylicButtonU,
   AcrylicTrackU,
   AcrylicLabelU,
-  AcrylicGhostPanelU,
   AcrylicControlU,
-  AcrylicScrollBoxU,
   AcrylicKnobU,
   AcrylicFrameU,
   AcrylicTrackBarU,
+  AcrylicGhostPanelU,
   AudioManagerU,
   TypesU;
 
@@ -65,11 +62,11 @@ type
     lblVolume             : TAcrylicLabel;
     lblPitch              : TAcrylicLabel;
     lblLoading            : TAcrylicLabel;
-    sbTracks              : TAcrylicScrollBox;
     knbLevel              : TAcrylicKnob;
     knbSpeed              : TAcrylicKnob;
     pnlBlurHint           : TPanel;
     tbProgress            : TAcrylicTrackBar;
+    pnlDesktop            : TAcrylicGhostPanel;
 
     procedure FormCreate                 (Sender: TObject);
     procedure FormDestroy                (Sender: TObject);
@@ -92,15 +89,15 @@ type
     procedure WMNCSize(var Message: TWMSize); message WM_SIZE;
 
   private
-    m_dctFrames                  : TDictionary<Integer, TAcrylicFrame>;
-    m_AudioManager               : TAudioManager;
+    m_dctFrames       : TDictionary<Integer, TAcrylicFrame>;
+    m_AudioManager    : TAudioManager;
 
-    m_bBlockBufferPositionUpdate : Boolean;
-    m_bPlaylistBar               : Boolean;
-    m_bStartPlaying              : Boolean;
+    m_bBlockPosUpdate : Boolean;
+    m_bPlaylistBar    : Boolean;
+    m_bStartPlaying   : Boolean;
 
-    m_DriverList                 : TAsioDriverList;
-    m_lstFiles                   : TStringList;
+    m_DriverList      : TAsioDriverList;
+    m_lstFiles        : TStringList;
 
     procedure InitializeVariables;
     procedure InitializeControls;
@@ -119,17 +116,6 @@ type
 end;
 
 const
-  c_nPanelHeight   = 75;
-  c_nPanelOffset   = 3;
-  c_nFirstPanelTop = 3;
-  c_nPanelGap      = 10;
-  c_nButtonWidth   = 25;
-  c_nButtonHeight  = 25;
-  c_nButtonRight1  = 30;
-  c_nButtonRight2  = 58;
-  c_nButtonTop1    = 1;
-  c_nButtonTop2    = 29;
-  c_nTrackOffset   = 61;
   c_nBntBlurRight  = 150;
 
 var
@@ -143,6 +129,8 @@ uses
   GDIPUTIL,
   CasUtilsU,
   CasTypesU,
+  CasTrackU,
+  CasConstantsU,
   Registry,
   AcrylicUtilsU,
   AcrylicTypesU,
@@ -164,15 +152,12 @@ begin
   BlurAmount  := 210;
   KeyPreview  := True;
   Resizable   := True;
-
   Left        := 30;
   Top         := 30;
   Width       := Screen.WorkAreaRect.Width  - 200;
   Height      := Screen.WorkAreaRect.Height - 200;
-
   MinWidth    := 500;
   MinHeight   := 700;
-
   Style       := [fsClose, fsMinimize, fsMaximize];
 
   InitializeVariables;
@@ -243,8 +228,8 @@ begin
 
   //////////////////////////////////////////////////////////////////////////////
   ///  RackFrame
-  afFrame        := TRackFrame.Create(sbTracks, m_AudioManager);
-  afFrame.Parent := sbTracks;
+  afFrame        := TRackFrame.Create(pnlDesktop, m_AudioManager);
+  afFrame.Parent := pnlDesktop;
   afFrame.Left   := 10;
   afFrame.Top    := 10;
   afFrame.Width  := 300;
@@ -254,8 +239,8 @@ begin
 
   //////////////////////////////////////////////////////////////////////////////
   ///  PlaylistFrame
-  afFrame        := TPlaylistFrame.Create(sbTracks, m_AudioManager);
-  afFrame.Parent := sbTracks;
+  afFrame        := TPlaylistFrame.Create(pnlDesktop, m_AudioManager);
+  afFrame.Parent := pnlDesktop;
   afFrame.Left   := 400;
   afFrame.Top    := 10;
   afFrame.Width  := 300;
@@ -298,8 +283,8 @@ begin
   pnlBlurHint.Left := ClientWidth - pnlBlurHint.Width - c_nBntBlurRight;
   btnInfo.Left     := pnlBlurHint.Left - btnInfo.Width - 5;
 
-  sbTracks.Width  := ClientWidth  - 50;
-  sbTracks.Height := ClientHeight - 170;
+  pnlDesktop.Width  := ClientWidth  - 50;
+  pnlDesktop.Height := ClientHeight - 170;
 end;
 
 //==============================================================================
@@ -325,9 +310,9 @@ begin
   knbLevel.Level := 0.7;
   knbSpeed.Level := 0.5;
 
-  m_bPlaylistBar               := True;
-  m_bStartPlaying              := False;
-  m_bBlockBufferPositionUpdate := False;
+  m_bPlaylistBar    := True;
+  m_bStartPlaying   := False;
+  m_bBlockPosUpdate := False;
 
   SetLength(m_DriverList, 0);
   ListAsioDrivers(m_DriverList);
@@ -496,7 +481,7 @@ procedure TMainForm.UpdateBufferPosition;
 var
   CasTrack  : TCasTrack;
 begin
-  if not m_bBlockBufferPositionUpdate then
+  if not m_bBlockPosUpdate then
   begin
     if m_bPlaylistBar then
       m_AudioManager.SetPosition(Trunc(tbProgress.Level * m_AudioManager.GetLength))
@@ -514,7 +499,7 @@ end;
 //==============================================================================
 procedure TMainForm.UpdateProgressBar;
 begin
-  m_bBlockBufferPositionUpdate := True;
+  m_bBlockPosUpdate := True;
   if m_bPlaylistBar then
   begin
     tbProgress.Level := m_AudioManager.GetProgress;
@@ -533,7 +518,7 @@ begin
       lblTime.Text     := m_AudioManager.GetTime + '/' + m_AudioManager.GetDuration;
     end;
   end;
-  m_bBlockBufferPositionUpdate := False;
+  m_bBlockPosUpdate := False;
 end;
 
 //==============================================================================
