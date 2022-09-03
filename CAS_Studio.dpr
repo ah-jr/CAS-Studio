@@ -38,6 +38,7 @@ uses
   CasConstantsU   in 'deps\CasAudioEngine\src\CasConstantsU.pas',
   CasTypesU       in 'deps\CasAudioEngine\src\CasTypesU.pas',
   CasDecoderU     in 'deps\CasAudioEngine\src\CasDecoderU.pas',
+  CasEncoderU     in 'deps\CasAudioEngine\src\CasEncoderU.pas',
   CasDatabaseU    in 'deps\CasAudioEngine\src\CasDatabaseU.pas',
   CasBasicFxU     in 'deps\CasAudioEngine\src\CasBasicFxU.pas',
   CasUtilsU       in 'deps\CasAudioEngine\src\CasUtilsU.pas',

@@ -130,6 +130,7 @@
         <DCCReference Include="deps\CasAudioEngine\src\CasConstantsU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasTypesU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasDecoderU.pas"/>
+        <DCCReference Include="deps\CasAudioEngine\src\CasEncoderU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasDatabaseU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasBasicFxU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasUtilsU.pas"/>

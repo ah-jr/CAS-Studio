@@ -9,6 +9,7 @@ uses
   Messages,
   CasEngineU,
   CasDecoderU,
+  CasEncoderU,
   CasTrackU,
   CasTypesU,
   CasConstantsU,
@@ -22,6 +23,7 @@ type
     m_lstListeners : TList<IAudioListener>;
     m_CasEngine    : TCasEngine;
     m_CasDecoder   : TCasDecoder;
+    m_CasEncoder   : TCasEncoder;
 
     m_dBpm         : Double;
 
@@ -129,6 +131,7 @@ begin
   m_hwndHandle   := AllocateHWnd(ProcessMessage);
   m_CasEngine    := TCasEngine.Create(m_hwndHandle);
   m_CasDecoder   := TCasDecoder.Create;
+  m_CasEncoder   := TCasEncoder.Create;
   m_lstListeners := TList<IAudioListener>.Create;
 
   m_dBpm := 130;
@@ -179,9 +182,9 @@ begin
 end;
 
 //==============================================================================
-procedure AudioExport(a_asOut : TAudioSpecs; a_strFileName : String);
+procedure TAudioManager.AudioExport(a_asOut : TAudioSpecs; a_strFileName : String);
 begin
-  //m_CasExport.Export(Engine.Playlist, a_asOut, a_strFileName);
+  m_CasEncoder.AudioExport(m_CasEngine, a_asOut, a_strFileName);
 end;
 
 //==============================================================================
