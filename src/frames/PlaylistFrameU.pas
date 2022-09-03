@@ -70,10 +70,9 @@ end;
 destructor  TPlaylistFrame.Destroy;
 begin
   m_AudioManager.RemoveListener(m_Playlist);
+  m_pmManager.Free;
 
   Inherited;
-
-  m_pmManager.Free;
 end;
 
 //==============================================================================

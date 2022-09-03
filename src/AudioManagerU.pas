@@ -40,7 +40,7 @@ type
     procedure AddListener(a_alListener : IAudioListener);
     procedure RemoveListener(a_alListener : IAudioListener);
 
-    procedure BroadcastProgress(a_dProgress : Double);
+    procedure BroadcastProgress;
     procedure BroadcastNewTrack(a_nTrackID : Integer);
     procedure BroadcastRemoveTrack(a_nTrackID : Integer);
     procedure BroadcastUpdateGUI;
@@ -77,6 +77,7 @@ type
     function  GetDuration   : String;
     function  GenerateID    : Integer;
 
+    function  GetTrackCount : Integer;
     function  GetActiveTracks : TList<Integer>;
     function  GetTrackProgress(a_nTrackId : Integer) : Double;
     function  AddTrackToPlaylist(a_nTrackId, a_nPosition : Integer) : Boolean;
@@ -164,7 +165,7 @@ begin
         ntBuffersCreated,
         ntDriverClosed     : BroadcastUpdateGui;
         ntRequestedReset   : BroadcastDriverChange;
-        ntBuffersUpdated   : BroadcastProgress(GetProgress);
+        ntBuffersUpdated   : BroadcastProgress;
       end;
     end;
   end;
@@ -195,13 +196,13 @@ begin
 end;
 
 //==============================================================================
-procedure TAudioManager.BroadcastProgress(a_dProgress : Double);
+procedure TAudioManager.BroadcastProgress;
 var
   nIndex : Integer;
 begin
   for nIndex := 0 to m_lstListeners.Count - 1 do
   begin
-    m_lstListeners.Items[nIndex].UpdateProgress(a_dProgress);
+    m_lstListeners.Items[nIndex].UpdateProgress(GetProgress);
   end;
 end;
 
@@ -312,6 +313,9 @@ function  TAudioManager.GetBufferSize : Cardinal; begin Result := m_CasEngine.Ge
 function  TAudioManager.GetTime       : String;   begin Result := m_CasEngine.GetTime; end;
 function  TAudioManager.GetDuration   : String;   begin Result := m_CasEngine.GetDuration; end;
 function  TAudioManager.GenerateID    : Integer;  begin Result := m_CasEngine.GenerateID; end;
+
+function TAudioManager.GetTrackCount : Integer;
+begin Result := m_CasEngine.GetTrackCount end;
 
 function TAudioManager.GetActiveTracks : TList<Integer>;
 begin Result := m_CasEngine.GetActiveTracks; end;

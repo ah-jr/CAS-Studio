@@ -71,7 +71,6 @@ type
     pnlBlurHint           : TPanel;
     tbProgress            : TAcrylicTrackBar;
 
-
     procedure FormCreate                 (Sender: TObject);
     procedure FormDestroy                (Sender: TObject);
     procedure FormKeyDown                (Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -83,22 +82,14 @@ type
     procedure btnNextClick               (Sender: TObject);
     procedure btnBlurClick               (Sender: TObject);
     procedure btnPrevDblClick            (Sender: TObject);
-    procedure btnCloseClick              (Sender: TObject);
-    procedure btnAddClick                (Sender: TObject);
-    procedure btnUpClick                 (Sender: TObject);
-    procedure btnDownClick               (Sender: TObject);
     procedure btnOpenFileClick           (Sender: TObject);
     procedure btnBarFuncClick            (Sender: TObject);
     procedure btnInfoClick               (Sender: TObject);
-    procedure trackClick                 (Sender: TObject);
-    procedure trackWheelUp               (Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
-    procedure trackWheelDown             (Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
     procedure tbProgressChange           (Sender: TObject);
     procedure knbLevelChange             (Sender: TObject);
     procedure knbSpeedChange             (Sender: TObject);
 
     procedure WMNCSize(var Message: TWMSize); message WM_SIZE;
-
 
   private
     m_dctFrames                  : TDictionary<Integer, TAcrylicFrame>;
@@ -107,13 +98,9 @@ type
     m_bBlockBufferPositionUpdate : Boolean;
     m_bPlaylistBar               : Boolean;
     m_bStartPlaying              : Boolean;
-    m_nLoadedTrackCount          : Integer;
 
     m_DriverList                 : TAsioDriverList;
-    m_lstTracks                  : TList<TAcrylicGhostPanel>;
     m_lstFiles                   : TStringList;
-
-    procedure AddTrackInfo(a_CasTrack : TCasTrack);
 
     procedure InitializeVariables;
     procedure InitializeControls;
@@ -122,8 +109,6 @@ type
     procedure ChangeEnabledObjects;
     procedure UpdateBufferPosition;
     procedure UpdateProgressBar;
-    procedure RearrangeTracks;
-    procedure SwapTracks(a_nTrack1, a_nTrack2 : Integer);
 
     procedure UpdateProgress(a_dProgress : Double);
     procedure AddTrack      (a_nTrackID  : Integer);
@@ -153,9 +138,9 @@ var
 implementation
 
 uses
+  Vcl.Imaging.pngimage,
   GDIPAPI,
   GDIPUTIL,
-  Vcl.Imaging.pngimage,
   CasUtilsU,
   CasTypesU,
   Registry,
@@ -295,18 +280,11 @@ end;
 
 //==============================================================================
 procedure TMainForm.FormDestroy(Sender: TObject);
-var
-  pnlPanel : TAcrylicGhostPanel;
 begin
   m_AudioManager.RemoveListener(Self);
 
-  m_AudioManager.Free;
-  m_dctFrames.Free;
-
-  for pnlPanel in m_lstTracks do
-    pnlPanel.Destroy;
-
-  FreeAndNil(m_lstTracks);
+  FreeAndNil(m_AudioManager);
+  FreeAndNil(m_dctFrames);
   FreeAndNil(m_lstFiles);
 
   SetLength(m_DriverList, 0);
@@ -314,8 +292,6 @@ end;
 
 //==============================================================================
 procedure TMainForm.WMNCSize(var Message: TWMSize);
-var
-  nIndex : Integer;
 begin
   inherited;
 
@@ -324,21 +300,6 @@ begin
 
   sbTracks.Width  := ClientWidth  - 50;
   sbTracks.Height := ClientHeight - 170;
-
-  if (m_lstTracks <> nil) then
-  begin
-    for nIndex := 0 to m_lstTracks.Count - 1 do
-    begin
-      (m_lstTracks.Items[nIndex] as TAcrylicGhostPanel).Width := sbTracks.ScrollPanel.Width - 2 * c_nPanelOffset;
-
-      (m_lstTracks.Items[nIndex] as TAcrylicGhostPanel).Controls[0].Left := sbTracks.ScrollPanel.Width - 2 * c_nPanelOffset - c_nButtonRight2;
-      (m_lstTracks.Items[nIndex] as TAcrylicGhostPanel).Controls[1].Left := sbTracks.ScrollPanel.Width - 2 * c_nPanelOffset - c_nButtonRight2;
-      (m_lstTracks.Items[nIndex] as TAcrylicGhostPanel).Controls[2].Left := sbTracks.ScrollPanel.Width - 2 * c_nPanelOffset - c_nButtonRight1;
-      (m_lstTracks.Items[nIndex] as TAcrylicGhostPanel).Controls[3].Left := sbTracks.ScrollPanel.Width - 2 * c_nPanelOffset - c_nButtonRight1;
-
-      (m_lstTracks.Items[nIndex] as TAcrylicGhostPanel).Controls[4].Width := sbTracks.ScrollPanel.Width - 2 * c_nPanelOffset - c_nTrackOffset;
-    end;
-  end;
 end;
 
 //==============================================================================
@@ -347,8 +308,8 @@ begin
   if Key = VK_SPACE then
     btnPlayClick(nil);
 
-  if GE_L(Key, $30, $3A) and ((Key - 49) <  m_lstTracks.Count) then
-    m_AudioManager.GoToTrack(StrToInt(String((m_lstTracks.Items[Key - 49] as TAcrylicGhostPanel).Name).SubString(3)));
+//  if GE_L(Key, $30, $3A) and ((Key - 49) <  m_lstTracks.Count) then
+//    m_AudioManager.GoToTrack(StrToInt(String((m_lstTracks.Items[Key - 49] as TAcrylicGhostPanel).Name).SubString(3)));
 end;
 
 //==============================================================================
@@ -359,14 +320,10 @@ begin
   m_dctFrames    := TDictionary<Integer, TAcrylicFrame>.Create;
   m_AudioManager := TAudioManager.Create;
   m_AudioManager.AddListener(Self);
-
-  m_lstTracks   := TList<TAcrylicGhostPanel>.Create;
-  m_lstFiles    := TStringList.Create;
+  m_lstFiles     := TStringList.Create;
 
   knbLevel.Level := 0.7;
   knbSpeed.Level := 0.5;
-
-  m_nLoadedTrackCount := 0;
 
   m_bPlaylistBar               := True;
   m_bStartPlaying              := False;
@@ -391,13 +348,13 @@ begin
                                    (m_AudioManager.Engine.DriverType = dtASIO);
 
   btnPlay.Enabled               := (m_AudioManager.GetReady) and
-                                   (m_nLoadedTrackCount > 0);
+                                   (m_AudioManager.GetTrackCount > 0);
 
-  btnStop.Enabled               := (m_nLoadedTrackCount > 0);
-  btnPrev.Enabled               := (m_nLoadedTrackCount > 0);
-  btnNext.Enabled               := (m_nLoadedTrackCount > 0);
-  btnBarFunc.Enabled            := (m_nLoadedTrackCount > 0);
-  tbProgress.Enabled            := (m_nLoadedTrackCount > 0);
+  btnStop.Enabled               := (m_AudioManager.GetTrackCount > 0);
+  btnPrev.Enabled               := (m_AudioManager.GetTrackCount > 0);
+  btnNext.Enabled               := (m_AudioManager.GetTrackCount > 0);
+  btnBarFunc.Enabled            := (m_AudioManager.GetTrackCount > 0);
+  tbProgress.Enabled            := (m_AudioManager.GetTrackCount > 0);
 
   RefreshAcrylicControls(Self);
 end;
@@ -556,10 +513,6 @@ end;
 
 //==============================================================================
 procedure TMainForm.UpdateProgressBar;
-var
-  CasTrack  : TCasTrack;
-  dProgress : Double;
-  nPanelIdx : Integer;
 begin
   m_bBlockBufferPositionUpdate := True;
   if m_bPlaylistBar then
@@ -581,74 +534,6 @@ begin
     end;
   end;
   m_bBlockBufferPositionUpdate := False;
-
-  for nPanelIdx := 0 to m_lstTracks.Count - 1 do
-  begin
-    if m_AudioManager.GetTrackByID(StrToInt(String((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Name).SubString(3)), CasTrack) then
-    begin
-      dProgress := (m_AudioManager.GetPosition - CasTrack.Position) / CasTrack.Size;
-
-      ((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Controls[4] as TAcrylicTrack).Position := dProgress;
-      ((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Controls[4] as TAcrylicTrack).Refresh;
-    end;
-  end;
-end;
-
-//==============================================================================
-procedure TMainForm.RearrangeTracks;
-var
-  nPanelIdx   : Integer;
-  TotalLength : Integer;
-  CasTrack    : TCasTrack;
-begin
-  TotalLength := 0;
-
-  for nPanelIdx := 0 to m_lstTracks.Count - 1 do
-  begin
-    (m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Top := nPanelIdx * (c_nPanelGap + c_nPanelHeight) + c_nFirstPanelTop;
-
-    if m_AudioManager.GetTrackByID(StrToInt(String((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Name).SubString(3)), CasTrack) then
-    begin
-      CasTrack.Position := TotalLength;
-      TotalLength := TotalLength + CasTrack.Size;
-
-      ((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Controls[4] as TAcrylicTrack).Text := IntToStr(nPanelIdx + 1) + ') ' + CasTrack.Title;
-    end;
-  end;
-end;
-
-//==============================================================================
-procedure TMainForm.SwapTracks(a_nTrack1, a_nTrack2 : Integer);
-var
-  pnlTrack1 : TAcrylicGhostPanel;
-  pnlTrack2 : TAcrylicGhostPanel;
-begin
-  if (a_nTrack1 < m_lstTracks.Count) and
-     (a_nTrack2 < m_lstTracks.Count) and
-     (a_nTrack1 <> a_nTrack2)        and
-     (a_nTrack1 >= 0)                and
-     (a_nTrack2 >= 0) then
-  begin
-    pnlTrack1 := m_lstTracks.Items[a_nTrack1];
-    pnlTrack2 := m_lstTracks.Items[a_nTrack2];
-
-    m_lstTracks.Remove(pnlTrack1);
-    m_lstTracks.Remove(pnlTrack2);
-
-    if a_nTrack1 < a_nTrack2 then
-    begin
-      m_lstTracks.Insert(a_nTrack1, pnlTrack2);
-      m_lstTracks.Insert(a_nTrack2, pnlTrack1);
-    end
-    else
-    begin
-      m_lstTracks.Insert(a_nTrack2, pnlTrack1);
-      m_lstTracks.Insert(a_nTrack1, pnlTrack2);
-    end;
-
-    RearrangeTracks;
-    RefreshAcrylicControls(Self);
-  end;
 end;
 
 //==============================================================================
@@ -677,245 +562,6 @@ begin
   WithBlur := not WithBlur;
 end;
 
-procedure TMainForm.AddTrackInfo(a_CasTrack : TCasTrack);
-var
-  pnlTrack     : TAcrylicGhostPanel;
-  btnUp        : TAcrylicButton;
-  btnDown      : TAcrylicButton;
-  btnAdd       : TAcrylicButton;
-  btnClose     : TAcrylicButton;
-  AcrylicTrack : TAcrylicTrack;
-  pngImage     : TPngImage;
-begin
-  //////////////////////////////////////////////////////////////////////////////
-  // Track Panel
-  pnlTrack             := TAcrylicGhostPanel.Create(Self);
-  pnlTrack.Parent      := Self;
-  pnlTrack.BevelOuter  := bvNone;
-  pnlTrack.Align       := alNone;
-  pnlTrack.Caption     := '';
-  pnlTrack.Name        := 'pnl' + IntToStr(a_CasTrack.ID);
-  pnlTrack.Width       := sbTracks.ScrollPanel.Width - 2 * c_nPanelOffset;
-  pnlTrack.Height      := c_nPanelHeight;
-  pnlTrack.Left        := c_nPanelOffset;
-  pnlTrack.Top         := m_nLoadedTrackCount * (c_nPanelGap + c_nPanelHeight) + c_nFirstPanelTop;
-
-  sbTracks.AddControl(pnlTrack);
-  m_lstTracks.Add(pnlTrack);
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Button to move up
-  btnUp                := TAcrylicButton.Create(pnlTrack);
-  btnUp.Parent         := pnlTrack;
-  btnUp.Align          := alNone;
-  btnUp.Top            := c_nButtonTop1;
-  btnUp.Left           := pnlTrack.Width - c_nButtonRight2;
-  btnUp.Text           := '';
-  btnUp.Name           := 'btnUp_' + IntToStr(a_CasTrack.ID);
-  btnUp.OnClick        := btnUpClick;
-  btnUp.Width          := c_nButtonWidth;
-  btnUp.Height         := c_nButtonHeight;
-  pngImage             := TPngImage.Create;
-  pngImage.LoadFromResourceName(HInstance, 'btnUp');
-  btnUp.Png            := pngImage;
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Button to move down
-  btnDown              := TAcrylicButton.Create(pnlTrack);
-  btnDown.Parent       := pnlTrack;
-  btnDown.Align        := alNone;
-  btnDown.Top          := c_nButtonTop2;
-  btnDown.Left         := pnlTrack.Width - c_nButtonRight2;
-  btnDown.Text         := '';
-  btnDown.Name         := 'btnDown_' + IntToStr(a_CasTrack.ID);
-  btnDown.OnClick      := btnDownClick;
-  btnDown.Width        := c_nButtonWidth;
-  btnDown.Height       := c_nButtonHeight;
-  pngImage             := TPngImage.Create;
-  pngImage.LoadFromResourceName(HInstance, 'btnDown');
-  btnDown.Png          := pngImage;
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Button to clone track
-  btnAdd               := TAcrylicButton.Create(pnlTrack);
-  btnAdd.Parent        := pnlTrack;
-  btnAdd.Align         := alNone;
-  btnAdd.Top           := c_nButtonTop2;
-  btnAdd.Left          := pnlTrack.Width - c_nButtonRight1;
-  btnAdd.Text          := '';
-  btnAdd.Name          := 'btnAdd_' + IntToStr(a_CasTrack.ID);
-  btnAdd.OnClick       := btnAddClick;
-  btnAdd.Width         := c_nButtonWidth;
-  btnAdd.Height        := c_nButtonHeight;
-  pngImage             := TPngImage.Create;
-  pngImage.LoadFromResourceName(HInstance, 'btnAdd');
-  btnAdd.Png           := pngImage;
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Button to close track
-  btnClose             := TAcrylicButton.Create(pnlTrack);
-  btnClose.Parent      := pnlTrack;
-  btnClose.Align       := alNone;
-  btnClose.Top         := c_nButtonTop1;
-  btnClose.Left        := pnlTrack.Width - c_nButtonRight1;
-  btnClose.Text        := '';
-  btnClose.Name        := 'btnClose_' + IntToStr(a_CasTrack.ID);
-  btnClose.OnClick     := btnCloseClick;
-  btnClose.Width       := c_nButtonWidth;
-  btnClose.Height      := c_nButtonHeight;
-  pngImage             := TPngImage.Create;
-  pngImage.LoadFromResourceName(HInstance, 'btnClose');
-  btnClose.Png         := pngImage;
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Track title and image
-  AcrylicTrack         := TAcrylicTrack.Create(pnlTrack);
-  AcrylicTrack.Parent  := pnlTrack;
-  AcrylicTrack.Align   := alNone;
-  AcrylicTrack.Width   := pnlTrack.Width - c_nTrackOffset;
-  AcrylicTrack.Height  := c_nPanelHeight;
-  AcrylicTrack.OnClick := trackClick;
-  AcrylicTrack.OnMouseWheelUp   := trackWheelUp;
-  AcrylicTrack.OnMouseWheelDown := trackWheelDown;
-  AcrylicTrack.Text    := IntToStr(m_nLoadedTrackCount + 1) + ') ' + a_CasTrack.Title;
-  AcrylicTrack.Name    := 'trkTrack_' + IntToStr(a_CasTrack.ID);
-  AcrylicTrack.SetData(@a_CasTrack.RawData.Right, a_CasTrack.Size);
-
-  lblTime.Text := m_AudioManager.GetTime + '/' + m_AudioManager.GetDuration;
-  Inc(m_nLoadedTrackCount);
-end;
-
-//==============================================================================
-procedure TMainForm.btnCloseClick(Sender : TObject);
-var
-  CasTrack : TCasTrack;
-begin
-  if m_AudioManager.GetTrackByID(StrToInt(String((Sender as TAcrylicButton).Parent.Name).SubString(3)), CasTrack) then
-  begin
-    m_AudioManager.SetPosition(m_AudioManager.GetPosition - CasTrack.Size);
-    m_AudioManager.DeleteTrack(CasTrack.ID);
-
-    m_AudioManager.BroadcastRemoveTrack(CasTrack.ID);
-  end;
-
-  m_lstTracks.Remove((Sender as TAcrylicButton).Parent as TAcrylicGhostPanel);
-  (Sender as TAcrylicButton).Parent.Destroy;
-  Dec(m_nLoadedTrackCount);
-
-  if m_nLoadedTrackCount = 0 then
-    m_AudioManager.Stop;
-
-  RearrangeTracks;
-  UpdateProgressBar;
-  ChangeEnabledObjects;
-end;
-
-//==============================================================================
-procedure TMainForm.btnAddClick(Sender : TObject);
-var
-  OriginalTrack : TCasTrack;
-  NewTrack      : TCasTrack;
-begin
-  if m_AudioManager.GetTrackByID(StrToInt(String((Sender as TAcrylicButton).Parent.Name).SubString(3)), OriginalTrack) then
-  begin
-    NewTrack       := OriginalTrack.Clone;
-    NewTrack.ID    := m_AudioManager.GenerateID;
-    m_AudioManager.AddTrack(NewTrack, 0);
-    m_AudioManager.AddTrackToPlaylist(NewTrack.ID, m_AudioManager.GetLength);
-
-    AddTrackInfo(NewTrack);
-
-    m_AudioManager.BroadcastNewTrack(NewTrack.ID);
-
-    UpdateProgressBar;
-  end;
-end;
-
-//==============================================================================
-procedure TMainForm.btnUpClick(Sender : TObject);
-var
-  nTrack : Integer;
-begin
-  nTrack := m_lstTracks.IndexOf((Sender as TAcrylicButton).Parent as TAcrylicGhostPanel);
-
-  SwapTracks(nTrack, nTrack - 1);
-end;
-
-//==============================================================================
-procedure TMainForm.btnDownClick(Sender : TObject);
-var
-  nTrack : Integer;
-begin
-  nTrack := m_lstTracks.IndexOf((Sender as TAcrylicButton).Parent as TAcrylicGhostPanel);
-
-  SwapTracks(nTrack, nTrack + 1);
-end;
-
-//==============================================================================
-procedure TMainForm.trackClick(Sender : TObject);
-begin
-  m_AudioManager.GoToTrack(StrToInt(String((Sender as TAcrylicTrack).Parent.Name).SubString(3)));
-  UpdateProgressBar;
-end;
-
-//==============================================================================
-procedure TMainForm.trackWheelUp(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
-var
-  ptMouse : TPoint;
-  nTrack  : Integer;
-  nDist   : Integer;
-begin
-  if ssShift in Shift then
-  begin
-    nTrack  := m_lstTracks.IndexOf((Sender as TAcrylicTrack).Parent as TAcrylicGhostPanel);
-    nDist   := c_nPanelGap + c_nPanelHeight;
-
-    SwapTracks(nTrack, nTrack - 1);
-
-    GetCursorPos(ptMouse);
-    ptMouse := ScreenToClient(ptMouse);
-
-    if (ptMouse.Y - nDist) < (sbTracks.Top) then
-    begin
-      sbTracks.Scroll(nDist);
-    end
-    else if nTrack > 0 then
-    begin
-      ptMouse := Mouse.CursorPos;
-      SetCursorPos(ptMouse.X, ptMouse.Y - nDist);
-    end;
-  end;
-end;
-
-//==============================================================================
-procedure TMainForm.trackWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
-var
-  ptMouse : TPoint;
-  nTrack  : Integer;
-  nDist   : Integer;
-begin
-  if ssShift in Shift then
-  begin
-    nTrack  := m_lstTracks.IndexOf((Sender as TAcrylicTrack).Parent as TAcrylicGhostPanel);
-    nDist   := c_nPanelGap + c_nPanelHeight;
-
-    SwapTracks(nTrack, nTrack + 1);
-
-    GetCursorPos(ptMouse);
-    ptMouse := ScreenToClient(ptMouse);
-
-    if (ptMouse.Y + nDist) > (sbTracks.Top + sbTracks.Height) then
-    begin
-      sbTracks.Scroll(-nDist);
-    end
-    else if nTrack < m_lstTracks.Count - 1 then
-    begin
-      ptMouse := Mouse.CursorPos;
-      SetCursorPos(ptMouse.X, ptMouse.Y + nDist);
-    end;
-  end;
-end;
-
 //==============================================================================
 procedure TMainForm.UpdateProgress(a_dProgress : Double);
 begin
@@ -924,8 +570,6 @@ end;
 
 //==============================================================================
 procedure TMainForm.AddTrack(a_nTrackID : Integer);
-var
-  CasTrack : TCasTrack;
 begin
   if m_bStartPlaying then
   begin
@@ -934,9 +578,6 @@ begin
   end;
 
   lblLoading.Visible := False;
-
-  if m_AudioManager.GetTrackById(a_nTrackID, CasTrack) then
-    AddTrackInfo(CasTrack);
 end;
 
 //==============================================================================
