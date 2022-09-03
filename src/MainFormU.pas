@@ -32,7 +32,6 @@ uses
   ShellApi,
   IOUtils,
   GDIPOBJ,
-  CasDecoderU,
   CasTrackU,
   CasConstantsU,
   AcrylicFormU,
@@ -103,7 +102,6 @@ type
 
   private
     m_dctFrames                  : TDictionary<Integer, TAcrylicFrame>;
-    m_CasDecoder                 : TCasDecoder;
     m_AudioManager               : TAudioManager;
 
     m_bBlockBufferPositionUpdate : Boolean;
@@ -114,8 +112,6 @@ type
     m_DriverList                 : TAsioDriverList;
     m_lstTracks                  : TList<TAcrylicGhostPanel>;
     m_lstFiles                   : TStringList;
-
-    procedure DecodeReady       (var MsgRec: TMessage); message CM_NotifyDecode;
 
     procedure AddTrackInfo(a_CasTrack : TCasTrack);
 
@@ -281,7 +277,7 @@ begin
     m_bStartPlaying    := True;
     lblLoading.Visible := True;
 
-    m_CasDecoder.AsyncDecodeFile(Handle, m_lstFiles, m_AudioManager.GetSampleRate);
+    m_AudioManager.AsyncDecodeFile(m_lstFiles);
   end;
 end;
 
@@ -290,8 +286,9 @@ procedure TMainForm.FormDestroy(Sender: TObject);
 var
   pnlPanel : TAcrylicGhostPanel;
 begin
+  m_AudioManager.RemoveListener(Self);
+
   m_AudioManager.Free;
-  m_CasDecoder.Free;
   m_dctFrames.Free;
 
   for pnlPanel in m_lstTracks do
@@ -348,8 +345,8 @@ var
   nDriverIdx : Integer;
 begin
   m_dctFrames    := TDictionary<Integer, TAcrylicFrame>.Create;
-  m_CasDecoder   := TCasDecoder.Create;
   m_AudioManager := TAudioManager.Create;
+  m_AudioManager.AddListener(Self);
 
   m_lstTracks   := TList<TAcrylicGhostPanel>.Create;
   m_lstFiles    := TStringList.Create;
@@ -372,30 +369,6 @@ begin
 
   cbDriver.ItemIndex := 0;
   cbDriverChange(cbDriver);
-end;
-
-//==============================================================================
-procedure TMainForm.DecodeReady(var MsgRec: TMessage);
-var
-  CasTrack : TCasTrack;
-begin
-  for CasTrack in m_CasDecoder.Tracks do
-  begin
-    CasTrack.Level := 0.7;
-    CasTrack.ID    := m_AudioManager.GenerateID;
-    m_AudioManager.AddTrack(CasTrack, 0);
-    m_AudioManager.AddTrackToPlaylist(CasTrack.ID, m_AudioManager.GetLength);
-    AddTrackInfo(CasTrack);
-
-    m_AudioManager.BroadcastNewTrack(CasTrack.ID);
-  end;
-
-  if m_bStartPlaying then
-    btnPlayClick(nil);
-
-  lblLoading.Visible := False;
-  m_CasDecoder.Tracks.Clear;
-  ChangeEnabledObjects;
 end;
 
 //==============================================================================
@@ -443,7 +416,7 @@ begin
   if odOpenFile.Execute then
   begin
     try
-      m_CasDecoder.AsyncDecodeFile(Handle, odOpenFile.Files, m_AudioManager.GetSampleRate);
+      m_AudioManager.AsyncDecodeFile(odOpenFile.Files);
 
       lblLoading.Visible := True;
     finally
@@ -607,8 +580,6 @@ begin
       ((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Controls[4] as TAcrylicTrack).Refresh;
     end;
   end;
-
-  m_AudioManager.BroadcastProgress(m_AudioManager.GetProgress);
 end;
 
 //==============================================================================
@@ -936,19 +907,30 @@ end;
 //==============================================================================
 procedure TMainForm.UpdateProgress(a_dProgress : Double);
 begin
-
+  UpdateProgressBar;
 end;
 
 //==============================================================================
 procedure TMainForm.AddTrack(a_nTrackID : Integer);
+var
+  CasTrack : TCasTrack;
 begin
+  if m_bStartPlaying then
+  begin
+    btnPlayClick(nil);
+    m_bStartPlaying := False;
+  end;
 
+  lblLoading.Visible := False;
+
+  if m_AudioManager.GetTrackById(a_nTrackID, CasTrack) then
+    AddTrackInfo(CasTrack);
 end;
 
 //==============================================================================
 procedure TMainForm.RemoveTrack(a_nTrackID  : Integer);
 begin
-
+  //
 end;
 
 //==============================================================================

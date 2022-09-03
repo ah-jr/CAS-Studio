@@ -8,8 +8,10 @@ uses
   Windows,
   Messages,
   CasEngineU,
+  CasDecoderU,
   CasTrackU,
   CasTypesU,
+  CasConstantsU,
   TypesU;
 
 type
@@ -19,17 +21,21 @@ type
     m_hwndHandle   : HWND;
     m_lstListeners : TList<IAudioListener>;
     m_CasEngine    : TCasEngine;
+    m_CasDecoder   : TCasDecoder;
 
     m_dBpm         : Double;
 
     function GetBeatCount : Double;
 
+    procedure DecodeReady(var MsgRec: TMessage);
     procedure InitializeVariables;
     procedure ProcessMessage(var MsgRec: TMessage);
 
   public
     constructor Create;
     destructor  Destroy; override;
+
+    procedure AsyncDecodeFile(a_lstFiles : TStrings);
 
     procedure AddListener(a_alListener : IAudioListener);
     procedure RemoveListener(a_alListener : IAudioListener);
@@ -73,14 +79,13 @@ type
 
     function  GetActiveTracks : TList<Integer>;
     function  GetTrackProgress(a_nTrackId : Integer) : Double;
+    function  AddTrackToPlaylist(a_nTrackId, a_nPosition : Integer) : Boolean;
+    function  AddTrack(a_CasTrack : TCasTrack; a_nMixerId : Integer) : Boolean;
 
     procedure ControlPanel;
     procedure SetLevel     (a_dLevel : Double);
     procedure SetPosition  (a_nPosition : Integer);
     procedure ChangeDriver (a_dtDriverType : TDriverType; a_nID : Integer);
-
-    function  AddTrackToPlaylist(a_nTrackId, a_nPosition : Integer) : Boolean;
-    function  AddTrack(a_CasTrack : TCasTrack; a_nMixerId : Integer) : Boolean;
     procedure DeleteTrack(a_nTrackId : Integer);
     procedure ClearTracks;
     procedure CalculateBuffers(a_LeftOut : CasTypesU.PIntArray; a_RightOut : CasTypesU.PIntArray);
@@ -111,6 +116,7 @@ begin
   DestroyWindow(m_hwndHandle);
   m_lstListeners.Free;
   m_CasEngine.Free;
+  m_CasDecoder.Free;
 
   inherited;
 end;
@@ -120,21 +126,54 @@ procedure TAudioManager.InitializeVariables;
 begin
   m_hwndHandle   := AllocateHWnd(ProcessMessage);
   m_CasEngine    := TCasEngine.Create(m_hwndHandle);
+  m_CasDecoder   := TCasDecoder.Create;
   m_lstListeners := TList<IAudioListener>.Create;
 
   m_dBpm := 130;
 end;
 
 //==============================================================================
+procedure TAudioManager.DecodeReady(var MsgRec: TMessage);
+var
+  CasTrack : TCasTrack;
+begin
+  for CasTrack in m_CasDecoder.Tracks do
+  begin
+    CasTrack.Level := 0.7;
+    CasTrack.ID    := m_CasEngine.GenerateID;
+    m_CasEngine.AddTrack(CasTrack, 0);
+    m_CasEngine.AddTrackToPlaylist(CasTrack.ID, m_CasEngine.GetLength);
+
+    BroadcastNewTrack(CasTrack.ID);
+  end;
+
+  m_CasDecoder.Tracks.Clear;
+
+  BroadcastUpdateGui;
+end;
+
+//==============================================================================
 procedure TAudioManager.ProcessMessage(var MsgRec: TMessage);
 begin
-  case TNotificationType(MsgRec.Wparam) of
-    ntBuffersDestroyed,
-    ntBuffersCreated,
-    ntDriverClosed     : BroadcastUpdateGui;
-    ntRequestedReset   : BroadcastDriverChange;
-    ntBuffersUpdated   : BroadcastProgress(GetProgress);
+  case MsgRec.Msg of
+    CM_NotifyDecode : DecodeReady(MsgRec);
+    CM_NotifyOwner  :
+    begin
+      case TNotificationType(MsgRec.Wparam) of
+        ntBuffersDestroyed,
+        ntBuffersCreated,
+        ntDriverClosed     : BroadcastUpdateGui;
+        ntRequestedReset   : BroadcastDriverChange;
+        ntBuffersUpdated   : BroadcastProgress(GetProgress);
+      end;
+    end;
   end;
+end;
+
+//==============================================================================
+procedure TAudioManager.AsyncDecodeFile(a_lstFiles : TStrings);
+begin
+  m_CasDecoder.AsyncDecodeFile(m_hwndHandle, a_lstFiles, m_CasEngine.SampleRate);
 end;
 
 //==============================================================================
