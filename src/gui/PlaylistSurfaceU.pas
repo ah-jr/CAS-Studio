@@ -70,6 +70,8 @@ type
     procedure UpdateProgress(a_dProgress : Double);
     procedure AddTrack      (a_nTrackID  : Integer);
     procedure RemoveTrack   (a_nTrackID  : Integer);
+    procedure UpdateGUI;
+    procedure DriverChange;
 
   end;
 
@@ -118,6 +120,18 @@ begin
   m_pmManager.Progress := a_dProgress;
 
   Invalidate(20);
+end;
+
+//==============================================================================
+procedure TPlaylistSurface.UpdateGUI;
+begin
+  //
+end;
+
+//==============================================================================
+procedure TPlaylistSurface.DriverChange;
+begin
+  //
 end;
 
 //==============================================================================

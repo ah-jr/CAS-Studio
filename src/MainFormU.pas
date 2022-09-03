@@ -32,7 +32,6 @@ uses
   ShellApi,
   IOUtils,
   GDIPOBJ,
-  CasEngineU,
   CasDecoderU,
   CasTrackU,
   CasConstantsU,
@@ -46,10 +45,11 @@ uses
   AcrylicKnobU,
   AcrylicFrameU,
   AcrylicTrackBarU,
-  AudioManagerU;
+  AudioManagerU,
+  TypesU;
 
 type
-  TMainForm = class(TAcrylicForm)
+  TMainForm = class(TAcrylicForm, IAudioListener)
     odOpenFile            : TOpenDialog;
     cbDriver              : TComboBox;
     btnPrev               : TAcrylicButton;
@@ -103,7 +103,6 @@ type
 
   private
     m_dctFrames                  : TDictionary<Integer, TAcrylicFrame>;
-    m_CasEngine                  : TCasEngine;
     m_CasDecoder                 : TCasDecoder;
     m_AudioManager               : TAudioManager;
 
@@ -116,7 +115,6 @@ type
     m_lstTracks                  : TList<TAcrylicGhostPanel>;
     m_lstFiles                   : TStringList;
 
-    procedure EngineNotification(var MsgRec: TMessage); message CM_NotifyOwner;
     procedure DecodeReady       (var MsgRec: TMessage); message CM_NotifyDecode;
 
     procedure AddTrackInfo(a_CasTrack : TCasTrack);
@@ -130,6 +128,12 @@ type
     procedure UpdateProgressBar;
     procedure RearrangeTracks;
     procedure SwapTracks(a_nTrack1, a_nTrack2 : Integer);
+
+    procedure UpdateProgress(a_dProgress : Double);
+    procedure AddTrack      (a_nTrackID  : Integer);
+    procedure RemoveTrack   (a_nTrackID  : Integer);
+    procedure UpdateGUI;
+    procedure DriverChange;
 
 end;
 
@@ -161,7 +165,6 @@ uses
   Registry,
   AcrylicUtilsU,
   AcrylicTypesU,
-  TypesU,
   InfoFrameU,
   PlaylistFrameU;
 
@@ -287,7 +290,7 @@ procedure TMainForm.FormDestroy(Sender: TObject);
 var
   pnlPanel : TAcrylicGhostPanel;
 begin
-  m_CasEngine.Free;
+  m_AudioManager.Free;
   m_CasDecoder.Free;
   m_dctFrames.Free;
 
@@ -345,9 +348,8 @@ var
   nDriverIdx : Integer;
 begin
   m_dctFrames    := TDictionary<Integer, TAcrylicFrame>.Create;
-  m_CasEngine    := TCasEngine.Create(Self, Handle);
   m_CasDecoder   := TCasDecoder.Create;
-  m_AudioManager := TAudioManager.Create(m_CasEngine);
+  m_AudioManager := TAudioManager.Create;
 
   m_lstTracks   := TList<TAcrylicGhostPanel>.Create;
   m_lstFiles    := TStringList.Create;
@@ -370,18 +372,6 @@ begin
 
   cbDriver.ItemIndex := 0;
   cbDriverChange(cbDriver);
-end;
-
-//==============================================================================
-procedure TMainForm.EngineNotification(var MsgRec: TMessage);
-begin
-  case TNotificationType(MsgRec.Wparam) of
-    ntBuffersDestroyed,
-    ntBuffersCreated,
-    ntDriverClosed     : ChangeEnabledObjects;
-    ntRequestedReset   : cbDriverChange(cbDriver);
-    ntBuffersUpdated   : UpdateProgressBar;
-  end;
 end;
 
 //==============================================================================
@@ -544,13 +534,13 @@ end;
 //==============================================================================
 procedure TMainForm.knbLevelChange(Sender: TObject);
 begin
-  m_CasEngine.Level := knbLevel.Level;
+  m_AudioManager.SetLevel(knbLevel.Level);
 end;
 
 //==============================================================================
 procedure TMainForm.knbSpeedChange(Sender: TObject);
 begin
-  m_CasEngine.Playlist.Speed := 2 * knbSpeed.Level;
+  m_AudioManager.Engine.Playlist.Speed := 2 * knbSpeed.Level;
 end;
 
 //==============================================================================
@@ -941,6 +931,36 @@ begin
       SetCursorPos(ptMouse.X, ptMouse.Y + nDist);
     end;
   end;
+end;
+
+//==============================================================================
+procedure TMainForm.UpdateProgress(a_dProgress : Double);
+begin
+
+end;
+
+//==============================================================================
+procedure TMainForm.AddTrack(a_nTrackID : Integer);
+begin
+
+end;
+
+//==============================================================================
+procedure TMainForm.RemoveTrack(a_nTrackID  : Integer);
+begin
+
+end;
+
+//==============================================================================
+procedure TMainForm.UpdateGUI;
+begin
+  ChangeEnabledObjects;
+end;
+
+//==============================================================================
+procedure TMainForm.DriverChange;
+begin
+  cbDriverChange(cbDriver);
 end;
 
 end.

@@ -19,6 +19,8 @@ type
     procedure UpdateProgress(a_dProgress : Double);
     procedure AddTrack      (a_nTrackID : Integer);
     procedure RemoveTrack   (a_nTrackID  : Integer);
+    procedure UpdateGUI;
+    procedure DriverChange;
   end;
 
   TIntArray = Array of Integer;
