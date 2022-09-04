@@ -410,6 +410,27 @@ object MainForm: TMainForm
     Bordercolor = claNull
     WithBorder = False
   end
+  object btnExport: TAcrylicButton
+    Left = 290
+    Top = 8
+    Width = 108
+    Height = 25
+    Text = 'Export'#13#10
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    Alignment = aCenter
+    Color = x640F0F0F
+    FontColor = claWhite
+    BackColor = 2039583
+    BorderColor = x34777777
+    WithBorder = True
+    WithBackground = True
+    Ghost = False
+    OnClick = btnExportClick
+  end
   object odOpenFile: TOpenDialog
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
     Left = 64

@@ -57,6 +57,7 @@ type
     btnBlur               : TAcrylicButton;
     btnBarFunc            : TAcrylicButton;
     btnInfo               : TAcrylicButton;
+    btnExport             : TAcrylicButton;
     lblTime               : TAcrylicLabel;
     lblTitle              : TAcrylicLabel;
     lblVolume             : TAcrylicLabel;
@@ -87,6 +88,7 @@ type
     procedure knbSpeedChange             (Sender: TObject);
 
     procedure WMNCSize(var Message: TWMSize); message WM_SIZE;
+    procedure btnExportClick(Sender: TObject);
 
   private
     m_dctFrames       : TDictionary<Integer, TAcrylicFrame>;
@@ -554,6 +556,20 @@ begin
 end;
 
 //==============================================================================
+procedure TMainForm.btnExportClick(Sender: TObject);
+var
+  asSpecs : TAudioSpecs;
+begin
+  with asSpecs do
+  begin
+    BitDepth   := 24;
+    SampleRate := 44100;
+    Format     := afMp3;
+  end;
+
+  m_AudioManager.AudioExport(asSpecs, 'audio');
+end;
+
 procedure TMainForm.AddTrack(a_nTrackID : Integer);
 begin
   if m_bStartPlaying then
