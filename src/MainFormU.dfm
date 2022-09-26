@@ -431,6 +431,15 @@ object MainForm: TMainForm
     Ghost = False
     OnClick = btnExportClick
   end
+  object Panel1: TPanel
+    Left = 504
+    Top = 39
+    Width = 185
+    Height = 41
+    Caption = 'Panel1'
+    TabOrder = 20
+    OnClick = Panel1Click
+  end
   object odOpenFile: TOpenDialog
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
     Left = 64

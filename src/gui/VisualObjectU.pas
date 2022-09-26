@@ -7,6 +7,8 @@ uses
   System.Classes,
   VCL.Direct2D,
   VCL.Controls,
+  F2DCanvasU,
+  F2DTypesU,
   VisualTypesU;
 
 type
@@ -19,7 +21,7 @@ type
   public
     constructor Create;
 
-    procedure Paint(a_d2dKit : TD2DKit); virtual; abstract;
+    procedure Paint(a_f2dCanvas : TF2DCanvas); virtual; abstract;
 
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); virtual;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;

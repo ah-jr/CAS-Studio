@@ -136,6 +136,10 @@
         <DCCReference Include="deps\CasAudioEngine\src\CasUtilsU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\Asio\AsioList.pas"/>
         <DCCReference Include="deps\CasAudioEngine\Asio\Asio.pas"/>
+        <DCCReference Include="deps\F2DCanvas\src\F2DMathU.pas"/>
+        <DCCReference Include="deps\F2DCanvas\src\F2DTypesU.pas"/>
+        <DCCReference Include="deps\F2DCanvas\src\F2DRendererU.pas"/>
+        <DCCReference Include="deps\F2DCanvas\src\F2DCanvasU.pas"/>
         <DCCReference Include="deps\TAcrylicForm\src\AcrylicControlU.pas"/>
         <DCCReference Include="deps\TAcrylicForm\src\AcrylicGhostPanelU.pas"/>
         <DCCReference Include="deps\TAcrylicForm\src\AcrylicFrameU.pas"/>
@@ -148,6 +152,7 @@
         <DCCReference Include="deps\TAcrylicForm\src\AcrylicTrackU.pas"/>
         <DCCReference Include="deps\TAcrylicForm\src\AcrylicKnobU.pas"/>
         <DCCReference Include="deps\TAcrylicForm\src\AcrylicTrackBarU.pas"/>
+        <DCCReference Include="deps\TAcrylicForm\src\AcrylicPopUpU.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

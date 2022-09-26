@@ -47,6 +47,12 @@ uses
   Asiolist      in 'deps\CasAudioEngine\Asio\AsioList.pas',
   Asio          in 'deps\CasAudioEngine\Asio\Asio.pas',
 
+  // Fast 2D Canvas
+  F2DMathU           in 'deps\F2DCanvas\src\F2DMathU.pas',
+  F2DTypesU          in 'deps\F2DCanvas\src\F2DTypesU.pas',
+  F2DRendererU       in 'deps\F2DCanvas\src\F2DRendererU.pas',
+  F2DCanvasU         in 'deps\F2DCanvas\src\F2DCanvasU.pas',
+
   // Acrylic Form
   AcrylicControlU    in 'deps\TAcrylicForm\src\AcrylicControlU.pas',
   AcrylicGhostPanelU in 'deps\TAcrylicForm\src\AcrylicGhostPanelU.pas',
@@ -59,7 +65,8 @@ uses
   AcrylicUtilsU      in 'deps\TAcrylicForm\src\AcrylicUtilsU.pas',
   AcrylicTrackU      in 'deps\TAcrylicForm\src\AcrylicTrackU.pas',
   AcrylicKnobU       in 'deps\TAcrylicForm\src\AcrylicKnobU.pas',
-  AcrylicTrackBarU   in 'deps\TAcrylicForm\src\AcrylicTrackBarU.pas';
+  AcrylicTrackBarU   in 'deps\TAcrylicForm\src\AcrylicTrackBarU.pas',
+  AcrylicPopUpU      in 'deps\TAcrylicForm\src\AcrylicPopUpU.pas';
 
 
 {$R *.res}

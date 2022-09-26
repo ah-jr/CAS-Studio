@@ -20,6 +20,8 @@ uses
   Vcl.Direct2D,
   VisualObjectU,
   VisualTypesU,
+  F2DCanvasU,
+  F2DTypesU,
   PlaylistManagerU,
   TypesU;
 
@@ -28,6 +30,7 @@ type
   TPlaylistSurface = class(TCustomControl, IAudioListener)
   private
     m_d2dKit    : TD2DKit;
+    m_f2dCanvas : TF2DCanvas;
     m_dtUpdate  : TDateTime;
     m_pmManager : TPlaylistManager;
 
@@ -47,10 +50,11 @@ type
     procedure Invalidate(a_nInterval : Integer); reintroduce; overload;
 
     procedure SetupD2DOBjects;
+    procedure F2DInit;
 
-    procedure GetPixelFormat;
-    procedure SetDCPixelFormat (hdc : HDC);
-    procedure glInit;
+//    procedure GetPixelFormat;
+//    procedure SetDCPixelFormat (hdc : HDC);
+//    procedure glInit;
 
   protected
     procedure Paint; override;
@@ -80,8 +84,7 @@ implementation
 uses
   System.Types,
   Winapi.DxgiFormat,
-  DateUtils,
-  OpenGL,
+  DateUtils, // OpenGL,
   VisualTrackU,
   Math,
   CasTrackU;
@@ -181,8 +184,10 @@ begin
 //  m_d2dKit.Brush.SetColor(D2D1ColorF(clDkGray, 1));
 //  m_d2dKit.Target.FillRectangle(d2dRect, m_d2dKit.Brush);
 
-  glColor4f($1F/$FF,$1F/$FF,$1F/$FF,1);
-  glRect(0, 0, ClientWidth, ClientHeight);
+  m_f2dCanvas.Clear($FF404040);
+
+//  glColor4f($1F/$FF,$1F/$FF,$1F/$FF,1);
+//  glRect(0, 0, ClientWidth, ClientHeight);
 end;
 
 //==============================================================================
@@ -195,18 +200,22 @@ begin
 //  m_d2dKit.Target.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 //  m_d2dKit.Brush.SetColor(D2D1ColorF(clWhite));
 
-  glColor4f(1,1,1,0.2);
-  glLineWidth(1);
+//  glColor4f(1,1,1,0.2);
+//  glLineWidth(1);
 
-  glBegin(GL_LINES);
+//  glBegin(GL_LINES);
+
+  m_f2dCanvas.LineWidth := 1;
+  m_f2dCanvas.DrawColor := c_clWhite;
 
   for nIndex := 0 to 10 do
   begin
     pntUp   := PointF(Trunc(m_pmManager.BeatToX(nIndex)) + 0.5, 0.5);
     pntDown := PointF(Trunc(m_pmManager.BeatToX(nIndex)) + 0.5, Height + 0.5);
 
-    glVertex2f(pntUp.X, pntUp.Y);
-    glVertex2f(pntDown.X, pntDown.Y);
+    m_f2dCanvas.DrawLine(pntUp, pntDown);
+//    glVertex2f(pntUp.X, pntUp.Y);
+//    glVertex2f(pntDown.X, pntDown.Y);
     //m_d2dKit.Target.DrawLine(pntUp, pntDown, m_d2dKit.Brush);
   end;
 
@@ -215,12 +224,13 @@ begin
     pntUp   := PointF(0.5,         nIndex*c_nLineHeight + 0.5);
     pntDown := PointF(Width + 0.5, nIndex*c_nLineHeight + 0.5);
 
-    glVertex2f(pntUp.X, pntUp.Y);
-    glVertex2f(pntDown.X, pntDown.Y);
+    m_f2dCanvas.DrawLine(pntUp, pntDown);
+//    glVertex2f(pntUp.X, pntUp.Y);
+//    glVertex2f(pntDown.X, pntDown.Y);
     //m_d2dKit.Target.DrawLine(pntUp, pntDown, m_d2dKit.Brush);
   end;
 
-  glEnd;
+  //glEnd;
 end;
 
 //==============================================================================
@@ -230,7 +240,7 @@ var
 begin
   for nIndex := 0 to m_lstVisualObjects.Count - 1 do
   begin
-    m_lstVisualObjects.Items[nIndex].Paint(m_D2DKit);
+    m_lstVisualObjects.Items[nIndex].Paint(m_f2dCanvas);
   end;
 end;
 
@@ -242,10 +252,12 @@ var
 begin
   //m_d2dKit.Target.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-  glColor4f(0,0.5,1,1);
-  glLineWidth(1);
+//  glColor4f(0,0.5,1,1);
+//  glLineWidth(1);
 
-  glBegin(GL_LINES);
+//  glBegin(GL_LINES);
+
+  m_f2dCanvas.DrawColor := $FF0080FF;
 
   pntUp.X := m_pmManager.GetProgressX;
   pntUp.Y := 0;
@@ -253,10 +265,12 @@ begin
   pntDown.X := m_pmManager.GetProgressX;
   pntDown.Y := Height;
 
-  glVertex2f(pntUp.X, pntUp.Y);
-  glVertex2f(pntDown.X, pntDown.Y);
+  m_f2dCanvas.DrawLine(pntUp, pntDown);
 
-  glEnd;
+  //glVertex2f(pntUp.X, pntUp.Y);
+  //glVertex2f(pntDown.X, pntDown.Y);
+
+  //glEnd;
 
   //m_d2dKit.Brush.SetColor(D2D1ColorF(clBlue));
   //m_d2dKit.Target.DrawLine(pntUp, pntDown, m_d2dKit.Brush);
@@ -280,25 +294,32 @@ begin
 //
 //  m_d2dKit.Target.EndDraw;
 
-  if not bGlInit then
-  begin
-    GlInit;
-    bGlInit := True;
-  end;
+//  if not bGlInit then
+//  begin
+//    GlInit;
+//    bGlInit := True;
+//  end;
+//
+//  //wglMakeCurrent(DC, hrc);
+//
+//  glViewport(0, 0, ClientWidth, ClientHeight); ;
+//  glLoadIdentity();
+//  glOrtho(0, ClientWidth, ClientHeight, 0, -1, 1);
+//  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
-  //wglMakeCurrent(DC, hrc);
+  if m_f2dCanvas = nil then
+    F2DInit;
 
-  glViewport(0, 0, ClientWidth, ClientHeight); ;
-  glLoadIdentity();
-  glOrtho(0, ClientWidth, ClientHeight, 0, -1, 1);
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  m_f2dCanvas.BeginDraw;
 
   PaintBackground;
   PaintGrid;
   PaintVisualObjects;
   PaintPosLine;
 
-  SwapBuffers(wglGetCurrentDC);
+  m_f2dCanvas.EndDraw;
+
+  //SwapBuffers(wglGetCurrentDC);
 end;
 
 //==============================================================================
@@ -418,6 +439,9 @@ begin
     m_pmManager.Transform.SetScale(PointF(m_pmManager.Transform.Scale.X * dScaleChange, 1));
   end;
 
+  if m_f2dCanvas <> nil then
+    m_f2dCanvas.ChangeSize(ClientWidth, ClientHeight);
+
   m_pmManager.SetPlaylistRect(ClientRect);
 end;
 
@@ -452,128 +476,144 @@ begin
   m_D2DKit.Target.CreateSolidColorBrush(D2D1ColorF(clWhite), @d2dBProp, m_d2dKit.Brush);
 end;
 
-procedure TPlaylistSurface.SetDCPixelFormat (hdc : HDC);
+//procedure TPlaylistSurface.SetDCPixelFormat (hdc : HDC);
+//var
+//  nPixelFormat: Integer;
+//  pfd: TPixelFormatDescriptor;
+//begin
+//  FillChar(pfd, SizeOf(pfd), 0);
+//
+//  With pfd do begin
+//	dwFlags   := PFD_DRAW_TO_WINDOW or
+//				 PFD_SUPPORT_OPENGL or
+//				 PFD_DOUBLEBUFFER;
+//	cDepthBits:= 32;
+//  end;
+//
+//  if (AAFormat > 0) then nPixelFormat := AAFormat
+//  else nPixelFormat := ChoosePixelFormat(DC, @pfd);
+//
+//  SetPixelFormat(DC, nPixelFormat, @pfd);
+//end;
+
+//==============================================================================
+procedure TPlaylistSurface.F2DInit;
 var
-  nPixelFormat: Integer;
-  pfd: TPixelFormatDescriptor;
+  f2dProp : TF2DCanvasProperties;
 begin
-  FillChar(pfd, SizeOf(pfd), 0);
-
-  With pfd do begin
-	dwFlags   := PFD_DRAW_TO_WINDOW or
-				 PFD_SUPPORT_OPENGL or
-				 PFD_DOUBLEBUFFER;
-	cDepthBits:= 32;
+  with f2dProp do
+  begin
+    Hwnd   := Handle;
+    Width  := ClientWidth;
+    Height := ClientHeight;
+    MSAA   := 8;
   end;
 
-  if (AAFormat > 0) then nPixelFormat := AAFormat
-  else nPixelFormat := ChoosePixelFormat(DC, @pfd);
-
-  SetPixelFormat(DC, nPixelFormat, @pfd);
+  m_f2dCanvas := TF2DCanvas.Create(f2dProp);
 end;
 
-//*********************************************
-procedure TPlaylistSurface.GetPixelFormat;
-const
-  WGL_SAMPLE_BUFFERS_ARB = $2041;
-  WGL_SAMPLES_ARB		   = $2042;
-  WGL_DRAW_TO_WINDOW_ARB = $2001;
-  WGL_SUPPORT_OPENGL_ARB = $2010;
-  WGL_DOUBLE_BUFFER_ARB  = $2011;
-  WGL_COLOR_BITS_ARB	 = $2014;
-  WGL_DEPTH_BITS_ARB	 = $2022;
-  WGL_STENCIL_BITS_ARB   = $2023;
-  AASamples : Integer	= 8;
-var
-  wglChoosePixelFormatARB:
-  function  (hdc: HDC;
-			 const piAttribIList: PGLint;
-			 const pfAttribFList: PGLfloat;
-			 nMaxFormats: GLuint;
-			 piFormats: PGLint;
-			 nNumFormats: PGLuint): BOOL; stdcall;
-
-  fAttributes: array [0..1] of Single;
-  iAttributes: array [0..17] of Integer;
-  pfd		: PIXELFORMATDESCRIPTOR;
-  iFormat	: Integer;
-  hwnd	   : Cardinal;
-  wnd		: TWndClassEx;
-  numFormats : Cardinal;
-  Format	 : Integer;
-begin
-  ZeroMemory(@wnd, SizeOf(wnd));
-  with wnd do
-  begin
-	cbSize		:= SizeOf(wnd);
-	lpfnWndProc   := @DefWindowProc;
-	hCursor	   := LoadCursor(0, IDC_ARROW);
-	lpszClassName := 'GetPixelFormat';
-  end;
-  RegisterClassEx(wnd);
-  hwnd := CreateWindow('GetPixelFormat', nil, WS_POPUP, 0, 0, 0, 0, 0, 0, HInstance, nil);
-  DC := GetDC(hwnd);
-  FillChar(pfd, SizeOf(pfd), 0);
-  with pfd do
-  begin
-	nSize		:= SizeOf(TPIXELFORMATDESCRIPTOR);
-	nVersion	 := 1;
-	dwFlags	  := PFD_DRAW_TO_WINDOW or
-					PFD_SUPPORT_OPENGL or
-					PFD_DOUBLEBUFFER;
-	iPixelType   := PFD_TYPE_RGBA;
-	cColorBits   := 32;
-	cDepthBits   := 24;
-	cStencilBits := 8;
-	iLayerType   := PFD_MAIN_PLANE;
-  end;
-  SetPixelFormat(DC, ChoosePixelFormat(DC, @pfd), @pfd);
-  wglMakeCurrent(DC, wglCreateContext(DC));
-  fAttributes[0]  := 0;
-  fAttributes[1]  := 0;
-  iAttributes[0]  := WGL_DRAW_TO_WINDOW_ARB;
-  iAttributes[1]  := 1;
-  iAttributes[2]  := WGL_SUPPORT_OPENGL_ARB;
-  iAttributes[3]  := 1;
-  iAttributes[4]  := WGL_SAMPLE_BUFFERS_ARB;
-  iAttributes[5]  := 1;
-  iAttributes[6]  := WGL_SAMPLES_ARB;
-  //iAttributes[7]:= calc;
-  iAttributes[8]  := WGL_DOUBLE_BUFFER_ARB;
-  iAttributes[9]  := 1;
-  iAttributes[10] := WGL_COLOR_BITS_ARB;
-  iAttributes[11] := 32;
-  iAttributes[12] := WGL_DEPTH_BITS_ARB;
-  iAttributes[13] := 24;
-  iAttributes[14] := WGL_STENCIL_BITS_ARB;
-  iAttributes[15] := 8;
-  iAttributes[16] := 0;
-  iAttributes[17] := 0;
-  wglChoosePixelFormatARB := wglGetProcAddress('wglChoosePixelFormatARB');
-  iAttributes[7] := AASamples;
-  if wglChoosePixelFormatARB(GetDC(hWnd), @iattributes, @fattributes, 1, @Format, @numFormats) and (numFormats >= 1) then
-  begin
-	AAFormat := Format;
-  end;
-  ReleaseDC(hwnd, DC);
-  DestroyWindow(hwnd);
-  wglMakeCurrent(0, 0);
-  wglDeleteContext(DC);
-end;
-
-procedure TPlaylistSurface.glInit;
-begin
-  GetPixelFormat;
-  DC := GetDC(Handle);
-  SetDCPixelFormat(DC);
-  hrc := wglCreateContext(DC);
-  wglMakeCurrent(DC, hrc);
-
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glLoadIdentity();
-  glOrtho(0, ClientWidth, ClientHeight, 0, -1, 1);
-  glMatrixMode(GL_MODELVIEW);
-end;
+////*********************************************
+//procedure TPlaylistSurface.GetPixelFormat;
+//const
+//  WGL_SAMPLE_BUFFERS_ARB = $2041;
+//  WGL_SAMPLES_ARB		   = $2042;
+//  WGL_DRAW_TO_WINDOW_ARB = $2001;
+//  WGL_SUPPORT_OPENGL_ARB = $2010;
+//  WGL_DOUBLE_BUFFER_ARB  = $2011;
+//  WGL_COLOR_BITS_ARB	 = $2014;
+//  WGL_DEPTH_BITS_ARB	 = $2022;
+//  WGL_STENCIL_BITS_ARB   = $2023;
+//  AASamples : Integer	= 8;
+//var
+//  wglChoosePixelFormatARB:
+//  function  (hdc: HDC;
+//			 const piAttribIList: PGLint;
+//			 const pfAttribFList: PGLfloat;
+//			 nMaxFormats: GLuint;
+//			 piFormats: PGLint;
+//			 nNumFormats: PGLuint): BOOL; stdcall;
+//
+//  fAttributes: array [0..1] of Single;
+//  iAttributes: array [0..17] of Integer;
+//  pfd		: PIXELFORMATDESCRIPTOR;
+//  iFormat	: Integer;
+//  hwnd	   : Cardinal;
+//  wnd		: TWndClassEx;
+//  numFormats : Cardinal;
+//  Format	 : Integer;
+//begin
+//  ZeroMemory(@wnd, SizeOf(wnd));
+//  with wnd do
+//  begin
+//	cbSize		:= SizeOf(wnd);
+//	lpfnWndProc   := @DefWindowProc;
+//	hCursor	   := LoadCursor(0, IDC_ARROW);
+//	lpszClassName := 'GetPixelFormat';
+//  end;
+//  RegisterClassEx(wnd);
+//  hwnd := CreateWindow('GetPixelFormat', nil, WS_POPUP, 0, 0, 0, 0, 0, 0, HInstance, nil);
+//  DC := GetDC(hwnd);
+//  FillChar(pfd, SizeOf(pfd), 0);
+//  with pfd do
+//  begin
+//	nSize		:= SizeOf(TPIXELFORMATDESCRIPTOR);
+//	nVersion	 := 1;
+//	dwFlags	  := PFD_DRAW_TO_WINDOW or
+//					PFD_SUPPORT_OPENGL or
+//					PFD_DOUBLEBUFFER;
+//	iPixelType   := PFD_TYPE_RGBA;
+//	cColorBits   := 32;
+//	cDepthBits   := 24;
+//	cStencilBits := 8;
+//	iLayerType   := PFD_MAIN_PLANE;
+//  end;
+//  SetPixelFormat(DC, ChoosePixelFormat(DC, @pfd), @pfd);
+//  wglMakeCurrent(DC, wglCreateContext(DC));
+//  fAttributes[0]  := 0;
+//  fAttributes[1]  := 0;
+//  iAttributes[0]  := WGL_DRAW_TO_WINDOW_ARB;
+//  iAttributes[1]  := 1;
+//  iAttributes[2]  := WGL_SUPPORT_OPENGL_ARB;
+//  iAttributes[3]  := 1;
+//  iAttributes[4]  := WGL_SAMPLE_BUFFERS_ARB;
+//  iAttributes[5]  := 1;
+//  iAttributes[6]  := WGL_SAMPLES_ARB;
+//  //iAttributes[7]:= calc;
+//  iAttributes[8]  := WGL_DOUBLE_BUFFER_ARB;
+//  iAttributes[9]  := 1;
+//  iAttributes[10] := WGL_COLOR_BITS_ARB;
+//  iAttributes[11] := 32;
+//  iAttributes[12] := WGL_DEPTH_BITS_ARB;
+//  iAttributes[13] := 24;
+//  iAttributes[14] := WGL_STENCIL_BITS_ARB;
+//  iAttributes[15] := 8;
+//  iAttributes[16] := 0;
+//  iAttributes[17] := 0;
+//  wglChoosePixelFormatARB := wglGetProcAddress('wglChoosePixelFormatARB');
+//  iAttributes[7] := AASamples;
+//  if wglChoosePixelFormatARB(GetDC(hWnd), @iattributes, @fattributes, 1, @Format, @numFormats) and (numFormats >= 1) then
+//  begin
+//	AAFormat := Format;
+//  end;
+//  ReleaseDC(hwnd, DC);
+//  DestroyWindow(hwnd);
+//  wglMakeCurrent(0, 0);
+//  wglDeleteContext(DC);
+//end;
+//
+//procedure TPlaylistSurface.glInit;
+//begin
+//  GetPixelFormat;
+//  DC := GetDC(Handle);
+//  SetDCPixelFormat(DC);
+//  hrc := wglCreateContext(DC);
+//  wglMakeCurrent(DC, hrc);
+//
+//  glEnable(GL_BLEND);
+//  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//  glLoadIdentity();
+//  glOrtho(0, ClientWidth, ClientHeight, 0, -1, 1);
+//  glMatrixMode(GL_MODELVIEW);
+//end;
 
 end.

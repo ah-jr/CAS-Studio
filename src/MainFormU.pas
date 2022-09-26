@@ -41,6 +41,7 @@ uses
   AcrylicFrameU,
   AcrylicTrackBarU,
   AcrylicGhostPanelU,
+  AcrylicPopUpU,
   AudioManagerU,
   TypesU;
 
@@ -68,6 +69,7 @@ type
     pnlBlurHint           : TPanel;
     tbProgress            : TAcrylicTrackBar;
     pnlDesktop            : TAcrylicGhostPanel;
+    Panel1: TPanel;
 
     procedure FormCreate                 (Sender: TObject);
     procedure FormDestroy                (Sender: TObject);
@@ -89,10 +91,14 @@ type
 
     procedure WMNCSize(var Message: TWMSize); message WM_SIZE;
     procedure btnExportClick(Sender: TObject);
+    procedure Panel1Click(Sender: TObject);
+
+    procedure MessageEvent(var Msg: TMsg; var Handled: Boolean);
 
   private
     m_dctFrames       : TDictionary<Integer, TAcrylicFrame>;
     m_AudioManager    : TAudioManager;
+    m_PopUp           : TAcrylicPopUp;
 
     m_bBlockPosUpdate : Boolean;
     m_bPlaylistBar    : Boolean;
@@ -169,7 +175,20 @@ begin
 
   ChangeEnabledObjects;
 
+
+  Application.OnMessage := MessageEvent;
+
   Inherited;
+end;
+
+//==============================================================================
+procedure TMainForm.MessageEvent(var Msg: TMsg; var Handled: Boolean);
+begin
+  if (Msg.message = WM_LBUTTONDOWN) or
+     (Msg.message = WM_NCLBUTTONDOWN) then
+  begin
+    m_PopUp.Hide;
+  end;
 end;
 
 //==============================================================================
@@ -213,6 +232,9 @@ begin
 
   btnInfo.FontColor    := $FFFF8B64;
   btnInfo.BorderColor  := $1FFF8B64;
+
+  m_PopUp := TAcrylicPopup.Create(Self);
+  m_PopUp.Parent := Self;
 end;
 
 //==============================================================================
@@ -263,6 +285,21 @@ begin
 
     m_AudioManager.AsyncDecodeFile(m_lstFiles);
   end;
+end;
+
+procedure TMainForm.Panel1Click(Sender: TObject);
+var
+  P: TPoint;
+  test : TPopUpItem;
+begin
+  test.Text := 'test';
+  test.Action := nil;
+  m_PopUp.AddItem(test);
+
+  GetCursorPos(P);
+  P := ScreenToClient(P);
+
+  m_PopUp.PopUp(P.X, P.Y);
 end;
 
 //==============================================================================

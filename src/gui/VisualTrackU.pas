@@ -12,6 +12,8 @@ uses
   VCL.Controls,
   VisualObjectU,
   VisualTypesU,
+  F2DCanvasU,
+  F2DTypesU,
   PlaylistManagerU;
 
 type
@@ -44,8 +46,8 @@ type
     constructor Create(a_piInfo : TPlaylistManager; a_nTrackID : Integer);
     destructor Destroy; override;
 
-    procedure Paint        (a_d2dKit : TD2DKit); override;
-    procedure PaintWavePath(a_d2dKit : TD2DKit);
+    procedure Paint        (a_f2dCanvas : TF2DCanvas); override;
+    procedure PaintWavePath(a_f2dCanvas : TF2DCanvas);
 
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
@@ -63,7 +65,7 @@ implementation
 
 uses
   Winapi.Windows,
-  System.UITypes,                               OpenGl,        System.Diagnostics, System.TimeSpan,
+  System.UITypes,                           //    OpenGl,        System.Diagnostics, System.TimeSpan,
   TypesU,
   Math;
 
@@ -107,13 +109,14 @@ begin
 end;
 
 //==============================================================================
-procedure TVisualTrack.Paint(a_d2dKit : TD2DKit);
-//var
+procedure TVisualTrack.Paint(a_f2dCanvas : TF2DCanvas);
+var
 //  d2dRect : TD2D1RectF;
-//  recSelf : TRect;
+  recSelf : TRect;
 begin
+  recSelf := GetRect;
+
 //  a_d2dKit.Brush.SetColor(D2D1ColorF(clBlack, 0.9));
-//  recSelf := GetRect;
 //
 //  d2dRect.Left   := recSelf.Left;
 //  d2dRect.Top    := recSelf.Top;
@@ -122,19 +125,22 @@ begin
 //
 //  a_d2dKit.Target.FillRectangle(d2dRect, a_d2dKit.Brush);
 
-  PaintWavePath(a_d2dKit);
+  a_f2dCanvas.FillColor := $AF202020;
+  a_f2dCanvas.FillRoundRect(recSelf.TopLeft, recSelf.BottomRight, 5);
+
+  PaintWavePath(a_f2dCanvas);
 end;
 
 //==============================================================================
-procedure TVisualTrack.PaintWavePath(a_d2dKit : TD2DKit);
+procedure TVisualTrack.PaintWavePath(a_f2dCanvas : TF2DCanvas);
 var
   recSelf        : TRect;
 //  d2dMatrix      : TD2DMatrix3x2F;
   pntScale       : TPointF;
   pntScaleChange : TPointF;
   nIndex         : Integer;
-  pntCurr        : TD2D1Point2F;
-  pntNext        : TD2D1Point2F;
+  pntCurr        : TPointF;
+  pntNext        : TPointF;
 begin
   recSelf := GetRect;
 
@@ -149,9 +155,12 @@ begin
   pntScale := m_pmManager.Transform.Scale;
   pntScaleChange := PointF(pntScale.X/m_dPathScale, pntScale.Y);
 
-  glColor4f($A0/$FF,$B4/$FF,$BE/$FF,1);
-  glLineWidth(2);
-  glBegin(GL_LINE_STRIP);
+  a_f2dCanvas.DrawColor := $FFA0B4BE;
+  a_f2dCanvas.LineWidth := 2;
+
+//  glColor4f($A0/$FF,$B4/$FF,$BE/$FF,1);
+//  glLineWidth(2);
+//  glBegin(GL_LINE_STRIP);
 
   for nIndex := 0 to m_lstWavePoints.Count - 2 do
   begin
@@ -163,11 +172,13 @@ begin
 
 //    a_d2dKit.Target.DrawLine(pntCurr, pntNext, a_d2dKit.Brush, 2);
 
-    glVertex2f(pntCurr.X, pntCurr.Y);
-    glVertex2f(pntNext.X, pntNext.Y);
+//    glVertex2f(pntCurr.X, pntCurr.Y);
+//    glVertex2f(pntNext.X, pntNext.Y);
+
+    a_f2dCanvas.DrawLine(pntCurr, pntNext);
   end;
 
-  glEnd();
+  //glEnd();
 
 //  a_d2dKit.Target.SetTransform(TD2DMatrix3x2F.Identity);
 end;
@@ -226,10 +237,10 @@ end;
 //==============================================================================
 function TVisualTrack.GetRect : TRect;
 begin
-  Result.Left   := Trunc(m_pmManager.SampleToX(m_nPosition));
-  Result.Top    := m_nHeight * c_nLineHeight;
+  Result.Left   := Trunc(m_pmManager.SampleToX(m_nPosition)) + 2;
+  Result.Top    := m_nHeight * c_nLineHeight + 1;
   Result.Right  := Result.Left + m_pmManager.GetTrackVisualSize(m_nTrackID);
-  Result.Bottom := Result.Top  + c_nLineHeight;
+  Result.Bottom := Result.Top  + c_nLineHeight - 1;
 end;
 
 //==============================================================================
