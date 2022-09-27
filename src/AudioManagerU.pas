@@ -134,7 +134,7 @@ begin
   m_CasEncoder   := TCasEncoder.Create;
   m_lstListeners := TList<IAudioListener>.Create;
 
-  m_dBpm := 130;
+  m_dBpm := c_dDefBPM;
 end;
 
 //==============================================================================

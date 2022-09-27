@@ -158,7 +158,9 @@ procedure TPlaylistSurface.PaintBackground;
 var
   d2dRect : TD2D1RectF;
 begin
-  m_f2dCanvas.Clear($FF404040);
+  m_f2dCanvas.Clear($00000000);
+  m_f2dCanvas.FillColor := c_clPlayList;
+  m_f2dCanvas.FillRect(0, 0, ClientWidth, ClientHeight);
 end;
 
 //==============================================================================
@@ -169,7 +171,7 @@ var
   nIndex  : Integer;
 begin
   m_f2dCanvas.LineWidth := 1;
-  m_f2dCanvas.DrawColor := c_clWhite;
+  m_f2dCanvas.DrawColor := c_clGridLines;
 
   for nIndex := 0 to 10 do
   begin
@@ -205,7 +207,7 @@ var
   pntUp   : TPointF;
   pntDown : TPointF;
 begin
-  m_f2dCanvas.DrawColor := $FF0080FF;
+  m_f2dCanvas.DrawColor := c_clPosLine;
 
   pntUp.X := m_pmManager.GetProgressX;
   pntUp.Y := 0;
@@ -378,6 +380,7 @@ begin
     Width  := ClientWidth;
     Height := ClientHeight;
     MSAA   := 8;
+    Debug  := False;
   end;
 
   m_f2dCanvas := TF2DCanvas.Create(f2dProp);

@@ -115,7 +115,7 @@ var
 begin
   recSelf := GetRect;
 
-  a_f2dCanvas.FillColor := $AF202020;
+  a_f2dCanvas.FillColor := c_clTrackBack;
   a_f2dCanvas.FillRoundRect(recSelf.TopLeft, recSelf.BottomRight, 5);
 
   PaintWavePath(a_f2dCanvas);

@@ -15,6 +15,14 @@ const
 
   c_nBarSplit   = 16;
 
+  //////////////////////////////////////////////////////////////////////////////
+  ///  Colors
+  c_clPlayList  = $E0252525;
+  c_clGridLines = $80FFFFFF;
+  c_clTrackBack = $DF131415;
+  c_clPosLine   = $FF0080FF;
+
+
 type
 
   TD2DKit = record
@@ -38,10 +46,13 @@ type
 
 implementation
 
+uses
+  Math;
+
 //==============================================================================
 procedure TVisualTransform.SetOffset(a_nOffset : Integer);
 begin
-  Offset := a_nOffset;
+  Offset := Max(0, a_nOffset);
 end;
 
 //==============================================================================
