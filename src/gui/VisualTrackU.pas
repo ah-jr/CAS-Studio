@@ -65,7 +65,7 @@ implementation
 
 uses
   Winapi.Windows,
-  System.UITypes,                           //    OpenGl,        System.Diagnostics, System.TimeSpan,
+  System.UITypes,
   TypesU,
   Math;
 
@@ -111,19 +111,9 @@ end;
 //==============================================================================
 procedure TVisualTrack.Paint(a_f2dCanvas : TF2DCanvas);
 var
-//  d2dRect : TD2D1RectF;
   recSelf : TRect;
 begin
   recSelf := GetRect;
-
-//  a_d2dKit.Brush.SetColor(D2D1ColorF(clBlack, 0.9));
-//
-//  d2dRect.Left   := recSelf.Left;
-//  d2dRect.Top    := recSelf.Top;
-//  d2dRect.Right  := d2dRect.Left + recSelf.Width;
-//  d2dRect.Bottom := d2dRect.Top  + recSelf.Height;
-//
-//  a_d2dKit.Target.FillRectangle(d2dRect, a_d2dKit.Brush);
 
   a_f2dCanvas.FillColor := $AF202020;
   a_f2dCanvas.FillRoundRect(recSelf.TopLeft, recSelf.BottomRight, 5);
@@ -135,7 +125,6 @@ end;
 procedure TVisualTrack.PaintWavePath(a_f2dCanvas : TF2DCanvas);
 var
   recSelf        : TRect;
-//  d2dMatrix      : TD2DMatrix3x2F;
   pntScale       : TPointF;
   pntScaleChange : TPointF;
   nIndex         : Integer;
@@ -143,12 +132,6 @@ var
   pntNext        : TPointF;
 begin
   recSelf := GetRect;
-
-//  a_d2dKit.Brush.SetColor(D2D1ColorF($BEB4A0));
-//  a_d2dKit.Target.SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-//
-//  d2dMatrix := TD2DMatrix3x2F.Translation(recSelf.Left, recSelf.Top);
-//  a_d2dKit.Target.SetTransform(d2dMatrix);
 
   CalculateWaveSink;
 
@@ -158,10 +141,6 @@ begin
   a_f2dCanvas.DrawColor := $FFA0B4BE;
   a_f2dCanvas.LineWidth := 2;
 
-//  glColor4f($A0/$FF,$B4/$FF,$BE/$FF,1);
-//  glLineWidth(2);
-//  glBegin(GL_LINE_STRIP);
-
   for nIndex := 0 to m_lstWavePoints.Count - 2 do
   begin
     pntCurr.X := recSelf.Left + m_lstWavePoints.Items[nIndex].X * pntScaleChange.X;
@@ -170,17 +149,8 @@ begin
     pntNext.X := recSelf.Left + m_lstWavePoints.Items[nIndex + 1].X * pntScaleChange.X;
     pntNext.Y := recSelf.Top  + m_lstWavePoints.Items[nIndex + 1].Y;
 
-//    a_d2dKit.Target.DrawLine(pntCurr, pntNext, a_d2dKit.Brush, 2);
-
-//    glVertex2f(pntCurr.X, pntCurr.Y);
-//    glVertex2f(pntNext.X, pntNext.Y);
-
     a_f2dCanvas.DrawLine(pntCurr, pntNext);
   end;
-
-  //glEnd();
-
-//  a_d2dKit.Target.SetTransform(TD2DMatrix3x2F.Identity);
 end;
 
 //==============================================================================
@@ -239,7 +209,7 @@ function TVisualTrack.GetRect : TRect;
 begin
   Result.Left   := Trunc(m_pmManager.SampleToX(m_nPosition)) + 2;
   Result.Top    := m_nHeight * c_nLineHeight + 1;
-  Result.Right  := Result.Left + m_pmManager.GetTrackVisualSize(m_nTrackID);
+  Result.Right  := Result.Left + m_pmManager.GetTrackVisualSize(m_nTrackID) - 2;
   Result.Bottom := Result.Top  + c_nLineHeight - 1;
 end;
 
@@ -323,7 +293,7 @@ const
   m_nTitleBarHeight = 0;
 begin
   recSelf      := GetRect;
-  nPathSize    := Trunc(recSelf.Width);
+  nPathSize    := Trunc(recSelf.Width) + 1;
   pData        := nil;
 
   m_pmManager.GetTrackData(m_nTrackID, pData, pData, nDataSize);                       size := 10;
