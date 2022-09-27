@@ -166,27 +166,53 @@ end;
 //==============================================================================
 procedure TPlaylistSurface.PaintGrid;
 var
-  pntUp   : TPointF;
-  pntDown : TPointF;
-  nIndex  : Integer;
+  pntA     : TPointF;
+  pntB     : TPointF;
+  nIndex   : Integer;
+  dBeatGap : Double;
+  nBeatMul : Integer;
 begin
   m_f2dCanvas.LineWidth := 1;
   m_f2dCanvas.DrawColor := c_clGridLines;
 
-  for nIndex := 0 to 10 do
-  begin
-    pntUp   := PointF(m_pmManager.BeatToX(nIndex), 0);
-    pntDown := PointF(m_pmManager.BeatToX(nIndex), Height);
+  //////////////////////////////////////////////////////////////////////////////
+  ///  Vertical Lines
+  dBeatGap := c_nBarWidth * m_pmManager.Transform.Scale.X;
+  nBeatMul := 1;
 
-    m_f2dCanvas.DrawLine(pntUp, pntDown);
+  while(dBeatGap * nBeatMul < c_nBarMinDistance) do
+  begin
+    nBeatMul := nBeatMul * 2;
   end;
 
-  for nIndex := 0 to 10 do
-  begin
-    pntUp   := PointF(0,     nIndex*c_nLineHeight);
-    pntDown := PointF(Width, nIndex*c_nLineHeight);
+  nIndex := Trunc(m_pmManager.Transform.Offset.X / c_nBarWidth);
+  pntA   := PointF(m_pmManager.BeatToX(nIndex), 0);
+  pntB   := PointF(m_pmManager.BeatToX(nIndex), Height);
 
-    m_f2dCanvas.DrawLine(pntUp, pntDown);
+  nIndex := nIndex - nIndex mod nBeatMul;
+
+  while pntA.X < ClientWidth do
+  begin
+    m_f2dCanvas.DrawLine(pntA, pntB);
+
+    Inc(nIndex, nBeatMul);
+    pntA := PointF(m_pmManager.BeatToX(nIndex), 0);
+    pntB := PointF(m_pmManager.BeatToX(nIndex), Height);
+  end;
+
+  //////////////////////////////////////////////////////////////////////////////
+  ///  Horizontal Lines
+  nIndex := 0;
+  pntA := PointF(0,     nIndex*m_pmManager.GetTrackVisualHeight + 0.5);
+  pntB := PointF(Width, nIndex*m_pmManager.GetTrackVisualHeight + 0.5);
+
+  while pntA.Y < ClientHeight do
+  begin
+    m_f2dCanvas.DrawLine(pntA, pntB);
+
+    Inc(nIndex);
+    pntA := PointF(0,     nIndex*m_pmManager.GetTrackVisualHeight + 0.5);
+    pntB := PointF(Width, nIndex*m_pmManager.GetTrackVisualHeight + 0.5);
   end;
 end;
 
@@ -242,12 +268,15 @@ var
   nIndex   : Integer;
   voObject : TVisualObject;
 begin
-  for nIndex := 0 to m_lstVisualObjects.Count - 1 do
+  for nIndex := m_lstVisualObjects.Count - 1 downto 0 do
   begin
     voObject := m_lstVisualObjects.Items[nIndex];
 
     if voObject.GetRect.Contains(Point(X, Y)) then
+    begin
       voObject.MouseDown(Button, Shift, X, Y);
+      Break;
+    end;
   end;
 end;
 
@@ -306,37 +335,57 @@ const
 begin
   Inherited;
 
-  if ssShift in Msg.ShiftState then
+  if (ssCtrl  in Msg.ShiftState) and
+     (ssShift in Msg.ShiftState) then
+  begin
+    if Msg.WheelDelta > 0 then
+    begin
+      m_pmManager.Transform.SetScaleY(m_pmManager.Transform.Scale.Y * 1.2);
+    end;
+    if Msg.WheelDelta < 0 then
+    begin
+      m_pmManager.Transform.SetScaleY(m_pmManager.Transform.Scale.Y / 1.2);
+    end;
+
+  end
+  else if ssCtrl in Msg.ShiftState then
   begin
     pntMouse.X := Msg.XPos;
     pntMouse.Y := Msg.YPos;
     pntMouse := ScreenToClient(pntMouse);
 
-
     if Msg.WheelDelta > 0 then
     begin
-      m_pmManager.Transform.SetScale(PointF(m_pmManager.Transform.Scale.X * 1.2, m_pmManager.Transform.Scale.Y));
-      nDeltaOffset := Trunc(m_pmManager.Transform.Offset + (pntMouse.X/m_pmManager.Transform.Scale.X)*(0.2));
-      m_pmManager.Transform.SetOffset(nDeltaOffset);
+      m_pmManager.Transform.SetScaleX(m_pmManager.Transform.Scale.X * 1.2);
+      nDeltaOffset := Trunc(m_pmManager.Transform.Offset.X + (pntMouse.X/m_pmManager.Transform.Scale.X)*(0.2));
+      m_pmManager.Transform.SetOffsetX(nDeltaOffset);
     end;
 
     if Msg.WheelDelta < 0 then
     begin
-      nDeltaOffset := Trunc(m_pmManager.Transform.Offset - (pntMouse.X/m_pmManager.Transform.Scale.X)*(0.2));
-      m_pmManager.Transform.SetScale(PointF(m_pmManager.Transform.Scale.X / 1.2, m_pmManager.Transform.Scale.Y));
-      m_pmManager.Transform.SetOffset(nDeltaOffset);
+      nDeltaOffset := Trunc(m_pmManager.Transform.Offset.X - (pntMouse.X/m_pmManager.Transform.Scale.X)*(0.2));
+      m_pmManager.Transform.SetScaleX(m_pmManager.Transform.Scale.X / 1.2);
+      m_pmManager.Transform.SetOffsetX(nDeltaOffset);
     end;
   end
-  else
+  else if ssShift in Msg.ShiftState then
   begin
     nDeltaOffset := Trunc(c_ntDeltaOffset / m_pmManager.Transform.Scale.X);
     nDeltaOffset := Max(nDeltaOffset, 1);
 
     if Msg.WheelDelta > 0 then
-      m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset - nDeltaOffset);
+      m_pmManager.Transform.SetOffsetX(m_pmManager.Transform.Offset.X - nDeltaOffset);
 
     if Msg.WheelDelta < 0 then
-      m_pmManager.Transform.SetOffset(m_pmManager.Transform.Offset + nDeltaOffset);
+      m_pmManager.Transform.SetOffsetX(m_pmManager.Transform.Offset.X + nDeltaOffset);
+  end
+  else
+  begin
+    if Msg.WheelDelta > 0 then
+      m_pmManager.Transform.SetOffsetY(m_pmManager.Transform.Offset.Y - 1);
+
+    if Msg.WheelDelta < 0 then
+      m_pmManager.Transform.SetOffsetY(m_pmManager.Transform.Offset.Y + 1);
   end;
 
   Invalidate(20);

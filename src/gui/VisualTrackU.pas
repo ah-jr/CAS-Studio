@@ -139,7 +139,7 @@ begin
   pntScaleChange := PointF(pntScale.X/m_dPathScale, pntScale.Y);
 
   a_f2dCanvas.DrawColor := $FFA0B4BE;
-  a_f2dCanvas.LineWidth := 2;
+  a_f2dCanvas.LineWidth := 1.8;
 
   for nIndex := 0 to m_lstWavePoints.Count - 2 do
   begin
@@ -179,8 +179,8 @@ begin
 
     m_nPosition := Round(nPos / nStepSize) * nStepSize;
 
-    if Abs(recSelf.Top + c_nLineHeight div 2 - nControlY) > c_nLineHeight then
-      m_nHeight := Trunc(nControlY / c_nLineHeight);
+    if Abs(recSelf.Top + m_pmManager.GetTrackVisualHeight div 2 - nControlY) > m_pmManager.GetTrackVisualHeight then
+      m_nHeight := Trunc(nControlY / m_pmManager.GetTrackVisualHeight);
 
     m_nPosition := Max(m_nPosition, 0);
     m_nHeight   := Max(m_nHeight,   0);
@@ -207,10 +207,17 @@ end;
 //==============================================================================
 function TVisualTrack.GetRect : TRect;
 begin
-  Result.Left   := Trunc(m_pmManager.SampleToX(m_nPosition)) + 2;
-  Result.Top    := m_nHeight * c_nLineHeight + 1;
-  Result.Right  := Result.Left + m_pmManager.GetTrackVisualSize(m_nTrackID) - 2;
-  Result.Bottom := Result.Top  + c_nLineHeight - 1;
+  Result.Left   := Trunc(m_pmManager.SampleToX(m_nPosition)) + 1;
+  Result.Top    := (m_nHeight - m_pmManager.Transform.Offset.Y) * m_pmManager.GetTrackVisualHeight + 1;
+  Result.Right  := Result.Left + m_pmManager.GetTrackVisualWidth(m_nTrackID) - 1;
+  Result.Bottom := Result.Top  + m_pmManager.GetTrackVisualHeight - 1;
+
+  // Prevent negative or null width/height
+  if Result.Right - Result.Left <= 0 then
+    Result.Right := Result.Left + 1;
+
+  if Result.Bottom - Result.Top <= 0 then
+    Result.Bottom := Result.Top + 1;    
 end;
 
 //==============================================================================

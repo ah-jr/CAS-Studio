@@ -162,8 +162,8 @@ begin
   Resizable   := True;
   Left        := 30;
   Top         := 30;
-  Width       := Screen.WorkAreaRect.Width  - 200;
-  Height      := Screen.WorkAreaRect.Height - 200;
+  Width       := Trunc(Screen.WorkAreaRect.Width * 1/2);
+  Height      := Trunc(Screen.WorkAreaRect.Height * 2/3);
   MinWidth    := 500;
   MinHeight   := 700;
   Style       := [fsClose, fsMinimize, fsMaximize];
@@ -254,10 +254,10 @@ begin
   ///  RackFrame
   afFrame        := TRackFrame.Create(pnlDesktop, m_AudioManager);
   afFrame.Parent := pnlDesktop;
-  afFrame.Left   := 10;
-  afFrame.Top    := 10;
+  afFrame.Left   := 0;
+  afFrame.Top    := 0;
   afFrame.Width  := 300;
-  afFrame.Height := 300;
+  afFrame.Height := pnlDesktop.Height;
   afFrame.Visible := True;
   m_dctFrames.AddOrSetValue(FID_Rack, afFrame);
 
@@ -265,10 +265,10 @@ begin
   ///  PlaylistFrame
   afFrame        := TPlaylistFrame.Create(pnlDesktop, m_AudioManager);
   afFrame.Parent := pnlDesktop;
-  afFrame.Left   := 400;
-  afFrame.Top    := 10;
-  afFrame.Width  := 300;
-  afFrame.Height := 300;
+  afFrame.Left   := 300;
+  afFrame.Top    := 0;
+  afFrame.Width  := pnlDesktop.Width - 300;
+  afFrame.Height := pnlDesktop.Height;
   afFrame.Visible := True;
   m_dctFrames.AddOrSetValue(FID_Playlist, afFrame);
 end;

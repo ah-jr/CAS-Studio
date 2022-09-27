@@ -14,7 +14,7 @@ const
   c_nMsInSec    = 1000;
   c_nSecInMin   = 60;
 
-  c_dDefBPM     = 30;
+  c_dDefBPM     = 130;
 
 type
   IAudioListener = interface

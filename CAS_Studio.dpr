@@ -20,7 +20,7 @@ uses
   VisualTypesU  in 'src\gui\VisualTypesU.pas',
 
   // Managers
-  PlaylistManagerU   in 'src\bus\PlaylistManagerU.pas',
+  PlaylistManagerU in 'src\bus\PlaylistManagerU.pas',
 
   // Frames
   InfoFrameU      in 'src\frames\InfoFrameU.pas',

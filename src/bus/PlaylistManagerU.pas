@@ -23,13 +23,14 @@ type
     constructor Create(a_AudioManager : TAudioManager);
     destructor  Destroy; override;
 
-    function  XToBeat            (a_dX          : Double)  : Double;
-    function  XToSample          (a_dX          : Double)  : Integer;
-    function  BeatToX            (a_dBeat       : Double)  : Double;
-    function  SampleToX          (a_nSample     : Integer) : Double;
-    function  GetVisualSize      (a_nSampleSize : Integer) : Double;
-    function  GetSampleSize      (a_nVisualSize : Double)  : Integer;
-    function  GetTrackVisualSize (a_nTrackID    : Integer) : Integer;
+    function  XToBeat              (a_dX          : Double)  : Double;
+    function  XToSample            (a_dX          : Double)  : Integer;
+    function  BeatToX              (a_dBeat       : Double)  : Double;
+    function  SampleToX            (a_nSample     : Integer) : Double;
+    function  GetVisualSize        (a_nSampleSize : Integer) : Double;
+    function  GetSampleSize        (a_nVisualSize : Double)  : Integer;
+    function  GetTrackVisualWidth  (a_nTrackID    : Integer) : Integer;
+    function  GetTrackVisualHeight : Integer;
     function  GetBeatCount    : Double;
     function  GetProgressX    : Double;
     function  GetPlaylistRect : TRect;
@@ -89,19 +90,19 @@ begin
   dProgress := m_AudioManager.Engine.Progress;
   dX        := dProgress*GetBeatCount*c_nBarWidth;
 
-  Result := (dX - m_vtTransform.Offset) * m_vtTransform.Scale.X;
+  Result := (dX - m_vtTransform.Offset.X) * m_vtTransform.Scale.X;
 end;
 
 //==============================================================================
 function TPlaylistManager.XToBeat(a_dX : Double) : Double;
 begin
-  Result := (a_dX/m_vtTransform.Scale.X + m_vtTransform.Offset) / c_nBarWidth;
+  Result := (a_dX/m_vtTransform.Scale.X + m_vtTransform.Offset.X) / c_nBarWidth;
 end;
 
 //==============================================================================
 function TPlaylistManager.BeatToX(a_dBeat : Double) : Double;
 begin
-  Result := (a_dBeat * c_nBarWidth - m_vtTransform.Offset) * m_vtTransform.Scale.X;
+  Result := (a_dBeat * c_nBarWidth - m_vtTransform.Offset.X) * m_vtTransform.Scale.X;
 end;
 
 //==============================================================================
@@ -157,7 +158,7 @@ begin
 end;
 
 //==============================================================================
-function TPlaylistManager.GetTrackVisualSize(a_nTrackID : Integer) : Integer;
+function TPlaylistManager.GetTrackVisualWidth(a_nTrackID : Integer) : Integer;
 var
   nSampleRate : Integer;
   dBPM        : Double;
@@ -170,6 +171,12 @@ begin
   dBeats         := MsToBeats(dBPM, SampleCountToMs(nSize, nSampleRate));
 
   Result := Trunc(dBeats * c_nBarWidth * m_vtTransform.Scale.X);
+end;
+
+//==============================================================================
+function TPlaylistManager.GetTrackVisualHeight : Integer;
+begin
+  Result := Trunc(c_nLineHeight * m_vtTransform.Scale.Y);
 end;
 
 //==============================================================================

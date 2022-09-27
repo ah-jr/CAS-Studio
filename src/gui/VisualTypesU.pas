@@ -15,11 +15,17 @@ const
 
   c_nBarSplit   = 16;
 
+  c_nBarMinDistance = 20;
+  c_nBarMaxDistance = 50;
+
+  c_dMinScaleY = 0.05;
+  c_dMaxScaleY = 2;
+
   //////////////////////////////////////////////////////////////////////////////
   ///  Colors
   c_clPlayList  = $E0252525;
-  c_clGridLines = $80FFFFFF;
-  c_clTrackBack = $DF131415;
+  c_clGridLines = $50AFAFAF;
+  c_clTrackBack = $D0161718;
   c_clPosLine   = $FF0080FF;
 
 
@@ -32,11 +38,16 @@ type
   end;
 
   TVisualTransform = record
-    Offset  : Integer;
+    Offset  : TPoint;
     Scale   : TPointF;
 
-    procedure SetOffset(a_nOffset : Integer);
+    procedure SetOffset(a_pntOffset : TPoint); overload;
+    procedure SetOffset(a_nX, a_nY : Double); overload;
+    procedure SetOffsetX(a_nX : Double);
+    procedure SetOffsetY(a_nY : Double);
     procedure SetScale(a_pntScale : TPointF);
+    procedure SetScaleX(a_nX : Double);
+    procedure SetScaleY(a_nY : Double);
   end;
 
   TVisualObjectState = record
@@ -50,15 +61,48 @@ uses
   Math;
 
 //==============================================================================
-procedure TVisualTransform.SetOffset(a_nOffset : Integer);
+procedure TVisualTransform.SetOffset(a_pntOffset : TPoint);
 begin
-  Offset := Max(0, a_nOffset);
+  Offset.X := Max(0, a_pntOffset.X);
+  Offset.Y := Max(0, a_pntOffset.Y);
+end;
+
+//==============================================================================
+procedure TVisualTransform.SetOffset(a_nX, a_nY : Double);
+begin
+  Offset.X := Max(0, Trunc(a_nX));
+  Offset.Y := Max(0, Trunc(a_nY));
+end;
+
+//==============================================================================
+procedure TVisualTransform.SetOffsetX(a_nX : Double);
+begin
+  Offset.X := Max(0, Trunc(a_nX));
+end;
+
+//==============================================================================
+procedure TVisualTransform.SetOffsetY(a_nY : Double);
+begin
+  Offset.Y := Max(0, Trunc(a_nY));
 end;
 
 //==============================================================================
 procedure TVisualTransform.SetScale(a_pntScale : TPointF);
 begin
-  Scale := a_pntScale;
+  Scale.X := Max(0, a_pntScale.X);
+  Scale.Y := Min(c_dMaxScaleY, Max(c_dMinScaleY, a_pntScale.Y));
+end;
+
+//==============================================================================
+procedure TVisualTransform.SetScaleX(a_nX : Double);
+begin
+  Scale.X := Max(0, a_nX);
+end;
+
+//==============================================================================
+procedure TVisualTransform.SetScaleY(a_nY : Double);
+begin
+  Scale.Y := Min(c_dMaxScaleY, Max(c_dMinScaleY, a_nY));
 end;
 
 end.
