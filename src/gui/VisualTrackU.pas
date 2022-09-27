@@ -59,6 +59,7 @@ type
 
     property Height   : Integer read m_nHeight   write SetLine;
     property Position : Integer read m_nPosition write m_nPosition;
+    property TrackID  : Integer read  m_nTrackID write m_nTrackID;
   end;
 
 implementation
@@ -177,7 +178,7 @@ begin
     nStepSize := m_pmManager.GetSampleSize(dStep);
     nPos      := m_pmManager.XToSample(nControlX);
 
-    m_nPosition := Round(nPos / nStepSize) * nStepSize;
+    m_nPosition := Trunc(nPos / nStepSize) * nStepSize;
 
     if Abs(recSelf.Top + m_pmManager.GetTrackVisualHeight div 2 - nControlY) > m_pmManager.GetTrackVisualHeight then
       m_nHeight := Trunc(nControlY / m_pmManager.GetTrackVisualHeight);

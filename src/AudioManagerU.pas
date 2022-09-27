@@ -48,8 +48,10 @@ type
     procedure BroadcastRemoveTrack(a_nTrackID : Integer);
     procedure BroadcastUpdateGUI;
     procedure BroadcastDriverChange;
+    procedure BroadcastBPMChange(a_dOldBPM : Double);
 
     procedure SetTrackPosition(a_nTrackID : Integer; a_nPosition : Integer);
+    procedure SetNewBPM(a_dBPM : Double);
 
     function  GetTrackSize(a_nTrackID   : Integer) : Integer;
     function  GetTrackData(a_nTrackID   : Integer;
@@ -98,7 +100,7 @@ type
 
 
     property Engine    : TCasEngine read m_CasEngine write m_CasEngine;
-    property BPM       : Double     read m_dBpm      write m_dBpm;
+    property BPM       : Double     read m_dBpm      write SetNewBPM;
     property BeatCount : Double     read GetBeatCount;
 
   end;
@@ -261,12 +263,33 @@ begin
 end;
 
 //==============================================================================
+procedure TAudioManager.BroadcastBPMChange(a_dOldBPM : Double);
+var
+  nIndex : Integer;
+begin
+  for nIndex := 0 to m_lstListeners.Count - 1 do
+  begin
+    m_lstListeners.Items[nIndex].UpdateBPM(a_dOldBPM, m_dBPM);
+  end;
+end;
+
+//==============================================================================
 procedure TAudioManager.SetTrackPosition(a_nTrackID : Integer; a_nPosition : Integer);
 var
   CasTrack : TCasTrack;
 begin
   if m_CasEngine.Database.GetTrackById(a_nTrackID, CasTrack) then
     CasTrack.Position := a_nPosition;
+end;
+
+//==============================================================================
+procedure TAudioManager.SetNewBPM(a_dBPM : Double);
+var
+  dOldBPM : Double;
+begin
+  dOldBPM := m_dBpm;
+  m_dBpm  := a_dBPM;
+  BroadcastBPMChange(dOldBPM);
 end;
 
 //==============================================================================

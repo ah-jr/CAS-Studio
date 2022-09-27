@@ -46,6 +46,7 @@ uses
     procedure RearrangeTracks;
     procedure SwapTracks(a_nTrack1, a_nTrack2 : Integer);
 
+    procedure UpdateBPM     (a_dOldBPM, a_dNewBPM : Double);
     procedure UpdateProgress(a_dProgress : Double);
     procedure AddTrack      (a_nTrackID  : Integer);
     procedure RemoveTrack   (a_nTrackID  : Integer);
@@ -427,6 +428,12 @@ begin
       SetCursorPos(ptMouse.X, ptMouse.Y + nDist);
     end;
   end;
+end;
+
+//==============================================================================
+procedure TRackFrame.UpdateBPM(a_dOldBPM, a_dNewBPM : Double);
+begin
+  //
 end;
 
 //==============================================================================

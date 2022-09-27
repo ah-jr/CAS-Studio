@@ -43,7 +43,7 @@ uses
   AcrylicGhostPanelU,
   AcrylicPopUpU,
   AudioManagerU,
-  TypesU;
+  TypesU, Vcl.NumberBox;
 
 type
   TMainForm = class(TAcrylicForm, IAudioListener)
@@ -70,6 +70,7 @@ type
     tbProgress            : TAcrylicTrackBar;
     pnlDesktop            : TAcrylicGhostPanel;
     Panel1: TPanel;
+    NumberBox1: TNumberBox;
 
     procedure FormCreate                 (Sender: TObject);
     procedure FormDestroy                (Sender: TObject);
@@ -94,6 +95,7 @@ type
     procedure Panel1Click(Sender: TObject);
 
     procedure MessageEvent(var Msg: TMsg; var Handled: Boolean);
+    procedure NumberBox1ChangeValue(Sender: TObject);
 
   private
     m_dctFrames       : TDictionary<Integer, TAcrylicFrame>;
@@ -115,6 +117,7 @@ type
     procedure UpdateBufferPosition;
     procedure UpdateProgressBar;
 
+    procedure UpdateBPM     (a_dOldBPM, a_dNewBPM : Double);
     procedure UpdateProgress(a_dProgress : Double);
     procedure AddTrack      (a_nTrackID  : Integer);
     procedure RemoveTrack   (a_nTrackID  : Integer);
@@ -191,6 +194,14 @@ begin
   end;
 end;
 
+procedure TMainForm.NumberBox1ChangeValue(Sender: TObject);
+var
+  strBPM : String;
+begin
+  strBPM := (Sender as TNumberBox).Text;
+  m_AudioManager.BPM := StrToFloat(strBPM);
+end;
+
 //==============================================================================
 procedure TMainForm.InitializeControls;
 var
@@ -232,6 +243,8 @@ begin
 
   btnInfo.FontColor    := $FFFF8B64;
   btnInfo.BorderColor  := $1FFF8B64;
+
+  NumberBox1.Text := m_AudioManager.BPM.ToString;
 
   m_PopUp := TAcrylicPopup.Create(Self);
   m_PopUp.Parent := Self;
@@ -584,6 +597,12 @@ procedure TMainForm.btnBlurClick(Sender: TObject);
 begin
   inherited;
   WithBlur := not WithBlur;
+end;
+
+//==============================================================================
+procedure TMainForm.UpdateBPM(a_dOldBPM, a_dNewBPM : Double);
+begin
+
 end;
 
 //==============================================================================

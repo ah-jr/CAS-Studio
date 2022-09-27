@@ -18,6 +18,7 @@ const
 
 type
   IAudioListener = interface
+    procedure UpdateBPM     (a_dOldBPM, a_dNewBPM : Double);
     procedure UpdateProgress(a_dProgress : Double);
     procedure AddTrack      (a_nTrackID : Integer);
     procedure RemoveTrack   (a_nTrackID  : Integer);

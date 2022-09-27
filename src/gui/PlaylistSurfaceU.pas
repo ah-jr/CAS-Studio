@@ -59,6 +59,7 @@ type
     constructor Create(AOwner : TComponent; a_pmManager : TPlaylistManager); reintroduce; overload;
     destructor  Destroy; override;
 
+    procedure UpdateBPM     (a_dOldBPM, a_dNewBPM : Double);
     procedure UpdateProgress(a_dProgress : Double);
     procedure AddTrack      (a_nTrackID  : Integer);
     procedure RemoveTrack   (a_nTrackID  : Integer);
@@ -94,11 +95,28 @@ var
   VisualObject : TVisualObject;
 begin
   for VisualObject in m_lstVisualObjects do
-     VisualObject.Free; 
+     VisualObject.Free;
 
   m_lstVisualObjects.Free;
 
   Inherited;
+end;
+
+//==============================================================================
+procedure TPlaylistSurface.UpdateBPM(a_dOldBPM, a_dNewBPM : Double);
+var
+  VisualObject : TVisualObject;
+  a_nNewPos : Integer;
+begin
+  for VisualObject in m_lstVisualObjects do
+  begin
+    if VisualObject is TVisualTrack then
+    begin
+      a_nNewPos := Trunc((VisualObject as TVisualTrack).Position * (a_dOldBPM/a_dNewBPM));
+      m_pmManager.SetTrackPosition((VisualObject as TVisualTrack).TrackID, a_nNewPos);
+      (VisualObject as TVisualTrack).Position := a_nNewPos;
+    end;
+  end;
 end;
 
 //==============================================================================

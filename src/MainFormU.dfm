@@ -440,6 +440,14 @@ object MainForm: TMainForm
     TabOrder = 20
     OnClick = Panel1Click
   end
+  object NumberBox1: TNumberBox
+    Left = 420
+    Top = 7
+    Width = 121
+    Height = 21
+    TabOrder = 21
+    OnChangeValue = NumberBox1ChangeValue
+  end
   object odOpenFile: TOpenDialog
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
     Left = 64
