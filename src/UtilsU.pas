@@ -10,8 +10,8 @@ uses
   function MpbToBpm(a_dMpb : Double) : Double;
   function BeatsToMs(a_dBpm : Double; a_dBeats : Double) : Double;
   function MsToBeats(a_dBpm : Double; a_dMs : Double) : Double;
-  function SampleCountToMs(a_nSmpCount : Integer; a_dSmpRate : Double) : Double;
-  function MsToSampleCount(a_dMs : Double; a_dSmpRate : Double) : Integer;
+  function SampleCountToMs(a_dSmpCount : Double; a_dSmpRate : Double) : Double;
+  function MsToSampleCount(a_dMs : Double; a_dSmpRate : Double) : Double;
 
 implementation
 
@@ -43,15 +43,15 @@ begin
 end;
 
 //==============================================================================
-function SampleCountToMs(a_nSmpCount : Integer; a_dSmpRate : Double) : Double;
+function SampleCountToMs(a_dSmpCount : Double; a_dSmpRate : Double) : Double;
 begin
-  Result := c_nMsInSec * (a_nSmpCount/a_dSmpRate);
+  Result := c_nMsInSec * (a_dSmpCount/a_dSmpRate);
 end;
 
 //==============================================================================
-function MsToSampleCount(a_dMs : Double; a_dSmpRate : Double) : Integer;
+function MsToSampleCount(a_dMs : Double; a_dSmpRate : Double) : Double;
 begin
-  Result := Trunc(a_dSmpRate * (a_dMs/c_nMsInSec));
+  Result := a_dSmpRate * (a_dMs/c_nMsInSec);
 end;
 
 end.

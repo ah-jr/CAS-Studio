@@ -24,13 +24,13 @@ type
     destructor  Destroy; override;
 
     function  XToBeat              (a_dX          : Double)  : Double;
-    function  XToSample            (a_dX          : Double)  : Integer;
+    function  XToSample            (a_dX          : Double)  : Double;
     function  BeatToX              (a_dBeat       : Double)  : Double;
-    function  SampleToX            (a_nSample     : Integer) : Double;
-    function  GetVisualSize        (a_nSampleSize : Integer) : Double;
-    function  GetSampleSize        (a_nVisualSize : Double)  : Integer;
-    function  GetTrackVisualWidth  (a_nTrackID    : Integer) : Integer;
-    function  GetTrackVisualHeight : Integer;
+    function  SampleToX            (a_dSample     : Double)  : Double;
+    function  GetVisualSize        (a_dSampleSize : Double)  : Double;
+    function  GetSampleSize        (a_dVisualSize : Double)  : Double;
+    function  GetTrackVisualWidth  (a_nTrackID    : Integer) : Double;
+    function  GetTrackVisualHeight : Double;
     function  GetBeatCount    : Double;
     function  GetProgressX    : Double;
     function  GetPlaylistRect : TRect;
@@ -71,14 +71,14 @@ end;
 //==============================================================================
 function TPlaylistManager.GetBeatCount : Double;
 var
-  nSampleRate : Integer;
+  dSampleRate : Double;
   dBPM        : Double;
   nSize       : Integer;
 begin
-  nSampleRate := Trunc(m_AudioManager.Engine.SampleRate);
+  dSampleRate := m_AudioManager.Engine.SampleRate;
   dBPM        := m_AudioManager.BPM;
   nSize       := m_AudioManager.Engine.Length;
-  Result      := MsToBeats(dBPM, SampleCountToMs(nSize, nSampleRate));
+  Result      := MsToBeats(dBPM, SampleCountToMs(nSize, dSampleRate));
 end;
 
 //==============================================================================
@@ -106,77 +106,77 @@ begin
 end;
 
 //==============================================================================
-function TPlaylistManager.XToSample(a_dX : Double) : Integer;
+function TPlaylistManager.XToSample(a_dX : Double) : Double;
 var
-  nSampleRate : Integer;
+  dSampleRate : Double;
   dBPM        : Double;
 begin
-  nSampleRate := Trunc(m_AudioManager.Engine.SampleRate);
+  dSampleRate := m_AudioManager.Engine.SampleRate;
   dBPM        := m_AudioManager.BPM;
 
-  Result := MsToSampleCount(BeatsToMs(dBPM, XToBeat(a_dX)), nSampleRate);
+  Result := MsToSampleCount(BeatsToMs(dBPM, XToBeat(a_dX)), dSampleRate);
 end;
 
 //==============================================================================
-function TPlaylistManager.SampleToX(a_nSample : Integer) : Double;
+function TPlaylistManager.SampleToX(a_dSample : Double) : Double;
 var
-  nSampleRate : Integer;
+  dSampleRate : Double;
   dBPM        : Double;
 begin
-  nSampleRate := Trunc(m_AudioManager.Engine.SampleRate);
+  dSampleRate := m_AudioManager.Engine.SampleRate;
   dBPM        := m_AudioManager.BPM;
 
-  Result := BeatToX(MsToBeats(dBPM, SampleCountToMs(a_nSample, nSampleRate)));
+  Result := BeatToX(MsToBeats(dBPM, SampleCountToMs(a_dSample, dSampleRate)));
 end;
 
 //==============================================================================
-function TPlaylistManager.GetVisualSize(a_nSampleSize : Integer) : Double;
+function TPlaylistManager.GetVisualSize(a_dSampleSize : Double) : Double;
 var
-  nSampleRate : Integer;
+  dSampleRate : Double;
   dBPM        : Double;
   dBeats      : Double;
 begin
-  nSampleRate    := Trunc(m_AudioManager.Engine.SampleRate);
+  dSampleRate    := m_AudioManager.Engine.SampleRate;
   dBPM           := m_AudioManager.BPM;
-  dBeats         := MsToBeats(dBPM, SampleCountToMs(a_nSampleSize, nSampleRate));
+  dBeats         := MsToBeats(dBPM, SampleCountToMs(a_dSampleSize, dSampleRate));
 
   Result := dBeats * c_nBarWidth * m_vtTransform.Scale.X;
 end;
 
 //==============================================================================
-function TPlaylistManager.GetSampleSize(a_nVisualSize : Double) : Integer;
+function TPlaylistManager.GetSampleSize(a_dVisualSize : Double) : Double;
 var
-  nSampleRate : Integer;
+  dSampleRate : Double;
   dBPM        : Double;
   dMs         : Double;
 begin
-  nSampleRate    := Trunc(m_AudioManager.Engine.SampleRate);
+  dSampleRate    := m_AudioManager.Engine.SampleRate;
   dBPM           := m_AudioManager.BPM;
-  dMs            := BeatsToMs(dBPM, a_nVisualSize / (c_nBarWidth * m_vtTransform.Scale.X));
+  dMs            := BeatsToMs(dBPM, a_dVisualSize / (c_nBarWidth * m_vtTransform.Scale.X));
 
-  Result := MsToSampleCount(dMs, nSampleRate);
+  Result := MsToSampleCount(dMs, dSampleRate);
 end;
 
 //==============================================================================
-function TPlaylistManager.GetTrackVisualWidth(a_nTrackID : Integer) : Integer;
+function TPlaylistManager.GetTrackVisualWidth(a_nTrackID : Integer) : Double;
 var
-  nSampleRate : Integer;
+  dSampleRate : Double;
   dBPM        : Double;
   dBeats      : Double;
   nSize       : Integer;
 begin
-  nSampleRate    := Trunc(m_AudioManager.Engine.SampleRate);
+  dSampleRate    := m_AudioManager.Engine.SampleRate;
   dBPM           := m_AudioManager.BPM;
   nSize          := m_AudioManager.GetTrackSize(a_nTrackID);
-  dBeats         := MsToBeats(dBPM, SampleCountToMs(nSize, nSampleRate));
+  dBeats         := MsToBeats(dBPM, SampleCountToMs(nSize, dSampleRate));
 
-  Result := Trunc(dBeats * c_nBarWidth * m_vtTransform.Scale.X);
+  Result := (dBeats * c_nBarWidth * m_vtTransform.Scale.X);
 end;
 
 //==============================================================================
-function TPlaylistManager.GetTrackVisualHeight : Integer;
+function TPlaylistManager.GetTrackVisualHeight : Double;
 begin
-  Result := Trunc(c_nLineHeight * m_vtTransform.Scale.Y);
+  Result := c_nLineHeight * m_vtTransform.Scale.Y;
 end;
 
 //==============================================================================

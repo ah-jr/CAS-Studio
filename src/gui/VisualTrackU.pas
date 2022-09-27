@@ -160,8 +160,8 @@ var
   dStep     : Double;
   nControlX : Integer;
   nControlY : Integer;
-  nPos      : Integer;
-  nStepSize : Integer;
+  dPos      : Double;
+  dStepSize : Double;
   recSelf   : TRect;
 begin
   Inherited;
@@ -175,12 +175,12 @@ begin
     nControlY := Y;
 
     dStep     := m_pmManager.Transform.Scale.X * c_nBarWidth/c_nBarSplit;
-    nStepSize := m_pmManager.GetSampleSize(dStep);
-    nPos      := m_pmManager.XToSample(nControlX);
+    dStepSize := m_pmManager.GetSampleSize(dStep);
+    dPos      := m_pmManager.XToSample(nControlX);
 
-    m_nPosition := Trunc(nPos / nStepSize) * nStepSize;
+    m_nPosition := Trunc(Trunc(dPos / dStepSize) * dStepSize);
 
-    if Abs(recSelf.Top + m_pmManager.GetTrackVisualHeight div 2 - nControlY) > m_pmManager.GetTrackVisualHeight then
+    if Abs(recSelf.Top + m_pmManager.GetTrackVisualHeight / 2 - nControlY) > m_pmManager.GetTrackVisualHeight then
       m_nHeight := Trunc(nControlY / m_pmManager.GetTrackVisualHeight);
 
     m_nPosition := Max(m_nPosition, 0);
@@ -209,9 +209,9 @@ end;
 function TVisualTrack.GetRect : TRect;
 begin
   Result.Left   := Trunc(m_pmManager.SampleToX(m_nPosition)) + 1;
-  Result.Top    := (m_nHeight - m_pmManager.Transform.Offset.Y) * m_pmManager.GetTrackVisualHeight + 1;
-  Result.Right  := Result.Left + m_pmManager.GetTrackVisualWidth(m_nTrackID) - 1;
-  Result.Bottom := Result.Top  + m_pmManager.GetTrackVisualHeight - 1;
+  Result.Top    := (m_nHeight - m_pmManager.Transform.Offset.Y) * Trunc(m_pmManager.GetTrackVisualHeight) + 1;
+  Result.Right  := Result.Left + Trunc(m_pmManager.GetTrackVisualWidth(m_nTrackID)) - 1;
+  Result.Bottom := Result.Top  + Trunc(m_pmManager.GetTrackVisualHeight) - 1;
 
   // Prevent negative or null width/height
   if Result.Right - Result.Left <= 0 then
