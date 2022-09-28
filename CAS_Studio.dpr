@@ -13,6 +13,7 @@ uses
 
   // Surface classes
   PlaylistSurfaceU  in 'src\gui\PlaylistSurfaceU.pas',
+  MixerSurfaceU     in 'src\gui\MixerSurfaceU.pas',
 
   // Visual classes
   VisualObjectU in 'src\gui\VisualObjectU.pas',
@@ -21,11 +22,13 @@ uses
 
   // Managers
   PlaylistManagerU in 'src\bus\PlaylistManagerU.pas',
+  MixerManagerU    in 'src\bus\MixerManagerU.pas',  
 
   // Frames
   InfoFrameU      in 'src\frames\InfoFrameU.pas',
   RackFrameU      in 'src\frames\RackFrameU.pas',
   PlaylistFrameU  in 'src\frames\PlaylistFrameU.pas',
+  MixerFrameU     in 'src\frames\MixerFrameU.pas',
 
   // Cas Libraries
   CasEngineU      in 'deps\CasAudioEngine\src\CasEngineU.pas',

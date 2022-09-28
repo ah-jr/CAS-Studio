@@ -1,4 +1,4 @@
-unit PlaylistSurfaceU;
+unit MixerSurfaceU;
 
 interface
 
@@ -22,16 +22,16 @@ uses
   VisualTypesU,
   F2DCanvasU,
   F2DTypesU,
-  PlaylistManagerU,
+  MixerManagerU,
   TypesU;
 
 
 type
-  TPlaylistSurface = class(TCustomControl, IAudioListener)
+  TMixerSurface = class(TCustomControl, IAudioListener)
   private
     m_f2dCanvas : TF2DCanvas;
     m_dtUpdate  : TDateTime;
-    m_pmManager : TPlaylistManager;
+    m_mmManager : TMixerManager;
 
     m_lstVisualObjects : TList<TVisualObject>;
 
@@ -56,7 +56,7 @@ type
     procedure MouseUp  (Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
 
   public
-    constructor Create(AOwner : TComponent; a_pmManager : TPlaylistManager); reintroduce; overload;
+    constructor Create(AOwner : TComponent; a_mmManager : TMixerManager); reintroduce; overload;
     destructor  Destroy; override;
 
     procedure UpdateBPM     (a_dOldBPM, a_dNewBPM : Double);
@@ -79,18 +79,18 @@ uses
   CasTrackU;
 
 //==============================================================================
-constructor TPlaylistSurface.Create(AOwner : TComponent; a_pmManager : TPlaylistManager);
+constructor TMixerSurface.Create(AOwner : TComponent; a_mmManager : TMixerManager);
 begin
   Inherited Create(AOwner);
 
-  m_pmManager := a_pmManager;
+  m_mmManager := a_mmManager;
   m_dtUpdate  := Now;
 
   m_lstVisualObjects := TList<TVisualObject>.Create;
 end;
 
 //==============================================================================
-destructor  TPlaylistSurface.Destroy;
+destructor  TMixerSurface.Destroy;
 var 
   VisualObject : TVisualObject;
 begin
@@ -103,7 +103,7 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.UpdateBPM(a_dOldBPM, a_dNewBPM : Double);
+procedure TMixerSurface.UpdateBPM(a_dOldBPM, a_dNewBPM : Double);
 var
   VisualObject : TVisualObject;
   a_nNewPos : Integer;
@@ -113,76 +113,56 @@ begin
     if VisualObject is TVisualTrack then
     begin
       a_nNewPos := Trunc((VisualObject as TVisualTrack).Position * (a_dOldBPM/a_dNewBPM));
-      m_pmManager.SetTrackPosition((VisualObject as TVisualTrack).TrackID, a_nNewPos);
+      m_mmManager.SetTrackPosition((VisualObject as TVisualTrack).TrackID, a_nNewPos);
       (VisualObject as TVisualTrack).Position := a_nNewPos;
     end;
   end;
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.UpdateProgress(a_dProgress : Double);
+procedure TMixerSurface.UpdateProgress(a_dProgress : Double);
 begin
-  m_pmManager.Progress := a_dProgress;
+  m_mmManager.Progress := a_dProgress;
 
   Invalidate(10);
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.UpdateGUI;
+procedure TMixerSurface.UpdateGUI;
 begin
   //
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.DriverChange;
+procedure TMixerSurface.DriverChange;
 begin
   //
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.AddTrack(a_nTrackID : Integer);
-var
-  vtTrack : TVisualTrack;
+procedure TMixerSurface.AddTrack(a_nTrackID : Integer);
 begin
-  vtTrack := TVisualTrack.Create(m_pmManager, a_nTrackID);
-  vtTrack.SetLine(m_lstVisualObjects.Count);
-
-  m_lstVisualObjects.Add(vtTrack);
+  //
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.RemoveTrack(a_nTrackID : Integer);
-var
-  nIndex   : Integer;
-  voObject : TVisualObject;
+procedure TMixerSurface.RemoveTrack(a_nTrackID : Integer);
 begin
-  inherited;
-
-  for nIndex := 0 to m_lstVisualObjects.Count - 1 do
-  begin
-    voObject := m_lstVisualObjects.Items[nIndex];
-
-    if (voObject is TVisualTrack) then
-    begin
-      m_lstVisualObjects.Remove(voObject);
-      (voObject as TVisualTrack).Free;
-      Break;
-    end
-  end;
+  //
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.PaintBackground;
+procedure TMixerSurface.PaintBackground;
 var
   d2dRect : TD2D1RectF;
 begin
   m_f2dCanvas.Clear($00000000);
-  m_f2dCanvas.FillColor := c_clPlayList;
+  m_f2dCanvas.FillColor := c_clMixer;
   m_f2dCanvas.FillRect(0, 0, ClientWidth, ClientHeight);
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.PaintGrid;
+procedure TMixerSurface.PaintGrid;
 var
   pntA     : TPointF;
   pntB     : TPointF;
@@ -195,7 +175,7 @@ begin
 
   //////////////////////////////////////////////////////////////////////////////
   ///  Vertical Lines
-  dBeatGap := c_nBarWidth * m_pmManager.Transform.Scale.X;
+  dBeatGap := c_nBarWidth * m_mmManager.Transform.Scale.X;
   nBeatMul := 1;
 
   while(dBeatGap * nBeatMul < c_nBarMinDistance) do
@@ -203,9 +183,9 @@ begin
     nBeatMul := nBeatMul * 2;
   end;
 
-  nIndex := Trunc(m_pmManager.Transform.Offset.X / c_nBarWidth);
-  pntA   := PointF(m_pmManager.BeatToX(nIndex), 0);
-  pntB   := PointF(m_pmManager.BeatToX(nIndex), Height);
+  nIndex := Trunc(m_mmManager.Transform.Offset.X / c_nBarWidth);
+  pntA   := PointF(m_mmManager.BeatToX(nIndex), 0);
+  pntB   := PointF(m_mmManager.BeatToX(nIndex), Height);
 
   nIndex := nIndex - nIndex mod nBeatMul;
 
@@ -214,28 +194,28 @@ begin
     m_f2dCanvas.DrawLine(pntA, pntB);
 
     Inc(nIndex, nBeatMul);
-    pntA := PointF(m_pmManager.BeatToX(nIndex), 0);
-    pntB := PointF(m_pmManager.BeatToX(nIndex), Height);
+    pntA := PointF(m_mmManager.BeatToX(nIndex), 0);
+    pntB := PointF(m_mmManager.BeatToX(nIndex), Height);
   end;
 
   //////////////////////////////////////////////////////////////////////////////
   ///  Horizontal Lines
   nIndex := 0;
-  pntA := PointF(0,     nIndex*m_pmManager.GetTrackVisualHeight + 0.5);
-  pntB := PointF(Width, nIndex*m_pmManager.GetTrackVisualHeight + 0.5);
+  pntA := PointF(0,     nIndex*m_mmManager.GetTrackVisualHeight + 0.5);
+  pntB := PointF(Width, nIndex*m_mmManager.GetTrackVisualHeight + 0.5);
 
   while pntA.Y < ClientHeight do
   begin
     m_f2dCanvas.DrawLine(pntA, pntB);
 
     Inc(nIndex);
-    pntA := PointF(0,     nIndex*m_pmManager.GetTrackVisualHeight + 0.5);
-    pntB := PointF(Width, nIndex*m_pmManager.GetTrackVisualHeight + 0.5);
+    pntA := PointF(0,     nIndex*m_mmManager.GetTrackVisualHeight + 0.5);
+    pntB := PointF(Width, nIndex*m_mmManager.GetTrackVisualHeight + 0.5);
   end;
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.PaintVisualObjects;
+procedure TMixerSurface.PaintVisualObjects;
 var
   nIndex : Integer;
 begin
@@ -246,24 +226,24 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.PaintPosLine;
+procedure TMixerSurface.PaintPosLine;
 var
   pntUp   : TPointF;
   pntDown : TPointF;
 begin
   m_f2dCanvas.DrawColor := c_clPosLine;
 
-  pntUp.X := m_pmManager.GetProgressX;
+  pntUp.X := m_mmManager.GetProgressX;
   pntUp.Y := 0;
 
-  pntDown.X := m_pmManager.GetProgressX;
+  pntDown.X := m_mmManager.GetProgressX;
   pntDown.Y := Height;
 
   m_f2dCanvas.DrawLine(pntUp, pntDown);
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.Paint;
+procedure TMixerSurface.Paint;
 var
   recSelf : TRect;
 begin
@@ -281,7 +261,7 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TMixerSurface.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   nIndex   : Integer;
   voObject : TVisualObject;
@@ -299,7 +279,7 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TMixerSurface.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   nIndex   : Integer;
   voObject : TVisualObject;
@@ -317,7 +297,7 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.MouseMove(Shift: TShiftState; X, Y: Integer);
+procedure TMixerSurface.MouseMove(Shift: TShiftState; X, Y: Integer);
 var
   nIndex   : Integer;
   voObject : TVisualObject;
@@ -338,13 +318,13 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.WMEraseBkgnd(var Msg: TWmEraseBkgnd);
+procedure TMixerSurface.WMEraseBkgnd(var Msg: TWmEraseBkgnd);
 begin
   //
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.CMMouseWheel(var Msg: TCMMouseWheel);
+procedure TMixerSurface.CMMouseWheel(var Msg: TCMMouseWheel);
 var
   nDeltaOffset : Integer;
   pntMouse     : TPoint;
@@ -358,11 +338,11 @@ begin
   begin
     if Msg.WheelDelta > 0 then
     begin
-      m_pmManager.Transform.SetScaleY(m_pmManager.Transform.Scale.Y * 1.2);
+      m_mmManager.Transform.SetScaleY(m_mmManager.Transform.Scale.Y * 1.2);
     end;
     if Msg.WheelDelta < 0 then
     begin
-      m_pmManager.Transform.SetScaleY(m_pmManager.Transform.Scale.Y / 1.2);
+      m_mmManager.Transform.SetScaleY(m_mmManager.Transform.Scale.Y / 1.2);
     end;
 
   end
@@ -374,60 +354,60 @@ begin
 
     if Msg.WheelDelta > 0 then
     begin
-      m_pmManager.Transform.SetScaleX(m_pmManager.Transform.Scale.X * 1.2);
-      nDeltaOffset := Trunc(m_pmManager.Transform.Offset.X + (pntMouse.X/m_pmManager.Transform.Scale.X)*(0.2));
-      m_pmManager.Transform.SetOffsetX(nDeltaOffset);
+      m_mmManager.Transform.SetScaleX(m_mmManager.Transform.Scale.X * 1.2);
+      nDeltaOffset := Trunc(m_mmManager.Transform.Offset.X + (pntMouse.X/m_mmManager.Transform.Scale.X)*(0.2));
+      m_mmManager.Transform.SetOffsetX(nDeltaOffset);
     end;
 
     if Msg.WheelDelta < 0 then
     begin
-      nDeltaOffset := Trunc(m_pmManager.Transform.Offset.X - (pntMouse.X/m_pmManager.Transform.Scale.X)*(0.2));
-      m_pmManager.Transform.SetScaleX(m_pmManager.Transform.Scale.X / 1.2);
-      m_pmManager.Transform.SetOffsetX(nDeltaOffset);
+      nDeltaOffset := Trunc(m_mmManager.Transform.Offset.X - (pntMouse.X/m_mmManager.Transform.Scale.X)*(0.2));
+      m_mmManager.Transform.SetScaleX(m_mmManager.Transform.Scale.X / 1.2);
+      m_mmManager.Transform.SetOffsetX(nDeltaOffset);
     end;
   end
   else if ssShift in Msg.ShiftState then
   begin
-    nDeltaOffset := Trunc(c_ntDeltaOffset / m_pmManager.Transform.Scale.X);
+    nDeltaOffset := Trunc(c_ntDeltaOffset / m_mmManager.Transform.Scale.X);
     nDeltaOffset := Max(nDeltaOffset, 1);
 
     if Msg.WheelDelta > 0 then
-      m_pmManager.Transform.SetOffsetX(m_pmManager.Transform.Offset.X - nDeltaOffset);
+      m_mmManager.Transform.SetOffsetX(m_mmManager.Transform.Offset.X - nDeltaOffset);
 
     if Msg.WheelDelta < 0 then
-      m_pmManager.Transform.SetOffsetX(m_pmManager.Transform.Offset.X + nDeltaOffset);
+      m_mmManager.Transform.SetOffsetX(m_mmManager.Transform.Offset.X + nDeltaOffset);
   end
   else
   begin
     if Msg.WheelDelta > 0 then
-      m_pmManager.Transform.SetOffsetY(m_pmManager.Transform.Offset.Y - 1);
+      m_mmManager.Transform.SetOffsetY(m_mmManager.Transform.Offset.Y - 1);
 
     if Msg.WheelDelta < 0 then
-      m_pmManager.Transform.SetOffsetY(m_pmManager.Transform.Offset.Y + 1);
+      m_mmManager.Transform.SetOffsetY(m_mmManager.Transform.Offset.Y + 1);
   end;
 
   Invalidate(20);
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.WMNCSize(var Msg: TWMSize);
+procedure TMixerSurface.WMNCSize(var Msg: TWMSize);
 var
   dScaleChange : Double;
 begin
-  if m_pmManager.GetPlaylistRect.Width <> 0 then
+  if m_mmManager.GetMixerRect.Width <> 0 then
   begin
-    dScaleChange := ClientRect.Width/m_pmManager.GetPlaylistRect.Width;
-    m_pmManager.Transform.SetScaleX(m_pmManager.Transform.Scale.X * dScaleChange);
+    dScaleChange := ClientRect.Width/m_mmManager.GetMixerRect.Width;
+    m_mmManager.Transform.SetScaleX(m_mmManager.Transform.Scale.X * dScaleChange);
   end;
 
   if m_f2dCanvas <> nil then
     m_f2dCanvas.ChangeSize(ClientWidth, ClientHeight);
 
-  m_pmManager.SetPlaylistRect(ClientRect);
+  m_mmManager.SetMixerRect(ClientRect);
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.Invalidate(a_nInterval : Integer);
+procedure TMixerSurface.Invalidate(a_nInterval : Integer);
 begin
   if DateUtils.MilliSecondsBetween(Now, m_dtUpdate) > a_nInterval then
   begin
@@ -437,7 +417,7 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.F2DInit;
+procedure TMixerSurface.F2DInit;
 var
   f2dProp : TF2DCanvasProperties;
 begin

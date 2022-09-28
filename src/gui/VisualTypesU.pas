@@ -10,10 +10,10 @@ uses
 const
   //////////////////////////////////////////////////////////////////////////////
   ///  PlaylistSurface
-  c_nBarWidth   = 100;
-  c_nLineHeight = 150;
+  c_nBarWidth   = 120;
+  c_nLineHeight = 90;
 
-  c_nBarSplit   = 16;
+  c_nBarSplit   = 12;
 
   c_nBarMinDistance = 20;
   c_nBarMaxDistance = 50;
@@ -27,6 +27,7 @@ const
   c_clGridLines = $50AFAFAF;
   c_clTrackBack = $D0161718;
   c_clPosLine   = $FF0080FF;
+  c_clMixer     = $E0252525;
 
 
 type

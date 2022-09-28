@@ -86,14 +86,11 @@ constructor TRackFrame.Create(AOwner : TComponent; a_AudioManager : TAudioManage
 begin
   Inherited Create(AOwner);
 
-  Name := 'RackFrame';
+  Name      := 'RackFrame';
+  Title     := 'Track Rack';
+  Resisable := True;
 
   m_AudioManager := a_AudioManager;
-
-  Resisable               := True;
-  Width                   := 280;
-  Height                  := 350;
-  Title                   := 'Track Rack';
 
   m_lstTracks := TList<TAcrylicGhostPanel>.Create;
   m_sbTracks  := TAcrylicScrollBox.Create(Self);

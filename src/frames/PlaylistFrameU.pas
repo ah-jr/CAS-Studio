@@ -49,7 +49,10 @@ constructor TPlaylistFrame.Create(AOwner : TComponent; a_AudioManager : TAudioMa
 begin
   Inherited Create(AOwner);
 
-  Name := 'PlaylistFrame';
+  Name      := 'PlaylistFrame';
+  Title     := 'Playlist';
+  Resisable := True;
+
   m_AudioManager := a_AudioManager;
 
   m_pmManager           := TPlaylistManager.Create(m_AudioManager);

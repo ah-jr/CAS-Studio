@@ -117,6 +117,9 @@ type
     procedure UpdateBufferPosition;
     procedure UpdateProgressBar;
 
+    function GetDesktopX(a_dProp : Double) : Integer;
+    function GetDesktopY(a_dProp : Double) : Integer;
+
     procedure UpdateBPM     (a_dOldBPM, a_dNewBPM : Double);
     procedure UpdateProgress(a_dProgress : Double);
     procedure AddTrack      (a_nTrackID  : Integer);
@@ -147,6 +150,7 @@ uses
   AcrylicTypesU,
   InfoFrameU,
   PlaylistFrameU,
+  MixerFrameU,
   RackFrameU;
 
 {$R *.dfm}
@@ -267,10 +271,10 @@ begin
   ///  RackFrame
   afFrame        := TRackFrame.Create(pnlDesktop, m_AudioManager);
   afFrame.Parent := pnlDesktop;
-  afFrame.Left   := 0;
-  afFrame.Top    := 0;
-  afFrame.Width  := 300;
-  afFrame.Height := pnlDesktop.Height;
+  afFrame.Left   := GetDesktopX(c_dRackLeft);
+  afFrame.Top    := GetDesktopY(c_dRackTop);
+  afFrame.Width  := GetDesktopX(c_dRackWidth);
+  afFrame.Height := GetDesktopY(c_dRackHeight);
   afFrame.Visible := True;
   m_dctFrames.AddOrSetValue(FID_Rack, afFrame);
 
@@ -278,12 +282,23 @@ begin
   ///  PlaylistFrame
   afFrame        := TPlaylistFrame.Create(pnlDesktop, m_AudioManager);
   afFrame.Parent := pnlDesktop;
-  afFrame.Left   := 300;
-  afFrame.Top    := 0;
-  afFrame.Width  := pnlDesktop.Width - 300;
-  afFrame.Height := pnlDesktop.Height;
+  afFrame.Left   := GetDesktopX(c_dPlaylistLeft);
+  afFrame.Top    := GetDesktopY(c_dPlaylistTop);
+  afFrame.Width  := GetDesktopX(c_dPlaylistWidth);
+  afFrame.Height := GetDesktopY(c_dPlaylistHeight);
   afFrame.Visible := True;
   m_dctFrames.AddOrSetValue(FID_Playlist, afFrame);
+
+  //////////////////////////////////////////////////////////////////////////////
+  ///  MixerFrame
+  afFrame        := TMixerFrame.Create(pnlDesktop, m_AudioManager);
+  afFrame.Parent := pnlDesktop;
+  afFrame.Left   := GetDesktopX(c_dMixerLeft);
+  afFrame.Top    := GetDesktopY(c_dMixerTop);
+  afFrame.Width  := GetDesktopX(c_dMixerWidth);
+  afFrame.Height := GetDesktopY(c_dMixerHeight);
+  afFrame.Visible := True;
+  m_dctFrames.AddOrSetValue(FID_Mixer, afFrame);
 end;
 
 //==============================================================================
@@ -597,6 +612,18 @@ procedure TMainForm.btnBlurClick(Sender: TObject);
 begin
   inherited;
   WithBlur := not WithBlur;
+end;
+
+//==============================================================================
+function TMainForm.GetDesktopX(a_dProp : Double) : Integer;
+begin
+  Result := Trunc(a_dProp * pnlDesktop.Width);
+end;
+
+//==============================================================================
+function TMainForm.GetDesktopY(a_dProp : Double) : Integer;
+begin
+  Result := Trunc(a_dProp * pnlDesktop.Height);
 end;
 
 //==============================================================================
