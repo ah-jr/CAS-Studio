@@ -43,7 +43,7 @@ type
   procedure CreateAvgPointsList(a_dctAvgPoints : TDictionary<Integer, TVisualAvgPoint>; a_nInterval : Integer);
 
   public
-    constructor Create(a_piInfo : TPlaylistManager; a_nTrackID : Integer);
+    constructor Create(a_pmManager : TPlaylistManager; a_nTrackID : Integer);
     destructor Destroy; override;
 
     procedure Paint        (a_f2dCanvas : TF2DCanvas); override;
@@ -71,11 +71,11 @@ uses
   Math;
 
 //==============================================================================
-constructor TVisualTrack.Create(a_piInfo : TPlaylistManager; a_nTrackID : Integer);
+constructor TVisualTrack.Create(a_pmManager : TPlaylistManager; a_nTrackID : Integer);
 begin
   Inherited Create;
   m_nTrackID    := a_nTrackID;
-  m_pmManager   := a_piInfo;
+  m_pmManager   := a_pmManager;
   m_nPosition   := 0;
   m_nHeight     := 0;
   m_bUpdatePath := False;

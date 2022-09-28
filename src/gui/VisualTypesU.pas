@@ -22,12 +22,19 @@ const
   c_dMaxScaleY = 2;
 
   //////////////////////////////////////////////////////////////////////////////
+  ///  PlaylistSurface
+  c_nMixerWidth  = 40;
+  c_nSliderCount = 5;
+
+  //////////////////////////////////////////////////////////////////////////////
   ///  Colors
-  c_clPlayList  = $E0252525;
-  c_clGridLines = $50AFAFAF;
-  c_clTrackBack = $D0161718;
-  c_clPosLine   = $FF0080FF;
-  c_clMixer     = $E0252525;
+  c_clPlayList   = $E0252525;
+  c_clGridLines  = $50AFAFAF;
+  c_clTrackBack  = $D0161718;
+  c_clPosLine    = $FF0080FF;
+  c_clMixer      = $E0252525;
+  c_clSliderBack   = $FFFF8B64;
+  c_clSliderBorder = $90FFFFFF;
 
 
 type

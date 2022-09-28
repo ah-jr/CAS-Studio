@@ -56,8 +56,6 @@ begin
   m_AudioManager := a_AudioManager;
 
   m_mmManager           := TMixerManager.Create(m_AudioManager);
-  m_mmManager.Progress  := 0;
-  m_mmManager.Size      := 0;
   m_mmManager.Transform.SetOffset(0, 0);
   m_mmManager.Transform.SetScale(PointF(1, 1));
 

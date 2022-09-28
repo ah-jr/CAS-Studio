@@ -42,14 +42,13 @@ type
 
     procedure Invalidate(a_nInterval : Integer); reintroduce; overload;
     procedure F2DInit;
+    procedure CreateMixerSliders;
 
 
   protected
     procedure Paint; override;
     procedure PaintBackground;
-    procedure PaintGrid;
     procedure PaintVisualObjects;
-    procedure PaintPosLine;
 
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
@@ -74,7 +73,7 @@ uses
   System.Types,
   Winapi.DxgiFormat,
   DateUtils,
-  VisualTrackU,
+  VisualMixerSliderU,
   Math,
   CasTrackU;
 
@@ -87,6 +86,8 @@ begin
   m_dtUpdate  := Now;
 
   m_lstVisualObjects := TList<TVisualObject>.Create;
+
+  CreateMixerSliders;
 end;
 
 //==============================================================================
@@ -104,26 +105,13 @@ end;
 
 //==============================================================================
 procedure TMixerSurface.UpdateBPM(a_dOldBPM, a_dNewBPM : Double);
-var
-  VisualObject : TVisualObject;
-  a_nNewPos : Integer;
 begin
-  for VisualObject in m_lstVisualObjects do
-  begin
-    if VisualObject is TVisualTrack then
-    begin
-      a_nNewPos := Trunc((VisualObject as TVisualTrack).Position * (a_dOldBPM/a_dNewBPM));
-      m_mmManager.SetTrackPosition((VisualObject as TVisualTrack).TrackID, a_nNewPos);
-      (VisualObject as TVisualTrack).Position := a_nNewPos;
-    end;
-  end;
+  //
 end;
 
 //==============================================================================
 procedure TMixerSurface.UpdateProgress(a_dProgress : Double);
 begin
-  m_mmManager.Progress := a_dProgress;
-
   Invalidate(10);
 end;
 
@@ -153,65 +141,10 @@ end;
 
 //==============================================================================
 procedure TMixerSurface.PaintBackground;
-var
-  d2dRect : TD2D1RectF;
 begin
   m_f2dCanvas.Clear($00000000);
   m_f2dCanvas.FillColor := c_clMixer;
   m_f2dCanvas.FillRect(0, 0, ClientWidth, ClientHeight);
-end;
-
-//==============================================================================
-procedure TMixerSurface.PaintGrid;
-var
-  pntA     : TPointF;
-  pntB     : TPointF;
-  nIndex   : Integer;
-  dBeatGap : Double;
-  nBeatMul : Integer;
-begin
-  m_f2dCanvas.LineWidth := 1;
-  m_f2dCanvas.DrawColor := c_clGridLines;
-
-  //////////////////////////////////////////////////////////////////////////////
-  ///  Vertical Lines
-  dBeatGap := c_nBarWidth * m_mmManager.Transform.Scale.X;
-  nBeatMul := 1;
-
-  while(dBeatGap * nBeatMul < c_nBarMinDistance) do
-  begin
-    nBeatMul := nBeatMul * 2;
-  end;
-
-  nIndex := Trunc(m_mmManager.Transform.Offset.X / c_nBarWidth);
-  pntA   := PointF(m_mmManager.BeatToX(nIndex), 0);
-  pntB   := PointF(m_mmManager.BeatToX(nIndex), Height);
-
-  nIndex := nIndex - nIndex mod nBeatMul;
-
-  while pntA.X < ClientWidth do
-  begin
-    m_f2dCanvas.DrawLine(pntA, pntB);
-
-    Inc(nIndex, nBeatMul);
-    pntA := PointF(m_mmManager.BeatToX(nIndex), 0);
-    pntB := PointF(m_mmManager.BeatToX(nIndex), Height);
-  end;
-
-  //////////////////////////////////////////////////////////////////////////////
-  ///  Horizontal Lines
-  nIndex := 0;
-  pntA := PointF(0,     nIndex*m_mmManager.GetTrackVisualHeight + 0.5);
-  pntB := PointF(Width, nIndex*m_mmManager.GetTrackVisualHeight + 0.5);
-
-  while pntA.Y < ClientHeight do
-  begin
-    m_f2dCanvas.DrawLine(pntA, pntB);
-
-    Inc(nIndex);
-    pntA := PointF(0,     nIndex*m_mmManager.GetTrackVisualHeight + 0.5);
-    pntB := PointF(Width, nIndex*m_mmManager.GetTrackVisualHeight + 0.5);
-  end;
 end;
 
 //==============================================================================
@@ -226,23 +159,6 @@ begin
 end;
 
 //==============================================================================
-procedure TMixerSurface.PaintPosLine;
-var
-  pntUp   : TPointF;
-  pntDown : TPointF;
-begin
-  m_f2dCanvas.DrawColor := c_clPosLine;
-
-  pntUp.X := m_mmManager.GetProgressX;
-  pntUp.Y := 0;
-
-  pntDown.X := m_mmManager.GetProgressX;
-  pntDown.Y := Height;
-
-  m_f2dCanvas.DrawLine(pntUp, pntDown);
-end;
-
-//==============================================================================
 procedure TMixerSurface.Paint;
 var
   recSelf : TRect;
@@ -253,9 +169,7 @@ begin
   m_f2dCanvas.BeginDraw;
 
   PaintBackground;
-  PaintGrid;
   PaintVisualObjects;
-  PaintPosLine;
 
   m_f2dCanvas.EndDraw;
 end;
@@ -431,6 +345,19 @@ begin
   end;
 
   m_f2dCanvas := TF2DCanvas.Create(f2dProp);
+end;
+
+//==============================================================================
+procedure TMixerSurface.CreateMixerSliders;
+var
+  nIndex   : Integer;
+  vtSlider : TVisualMixerSlider;
+begin
+  for nIndex := 0 to c_nSliderCount - 1 do
+  begin
+    vtSlider := TVisualMixerSlider.Create(m_mmManager, 0);
+    m_lstVisualObjects.Add(vtSlider);
+  end;
 end;
 
 end.

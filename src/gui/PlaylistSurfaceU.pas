@@ -173,8 +173,6 @@ end;
 
 //==============================================================================
 procedure TPlaylistSurface.PaintBackground;
-var
-  d2dRect : TD2D1RectF;
 begin
   m_f2dCanvas.Clear($00000000);
   m_f2dCanvas.FillColor := c_clPlayList;

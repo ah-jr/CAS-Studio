@@ -16,9 +16,10 @@ uses
   MixerSurfaceU     in 'src\gui\MixerSurfaceU.pas',
 
   // Visual classes
-  VisualObjectU in 'src\gui\VisualObjectU.pas',
-  VisualTrackU  in 'src\gui\VisualTrackU.pas',
-  VisualTypesU  in 'src\gui\VisualTypesU.pas',
+  VisualTypesU       in 'src\gui\VisualTypesU.pas',
+  VisualObjectU      in 'src\gui\VisualObjectU.pas',
+  VisualTrackU       in 'src\gui\VisualTrackU.pas',
+  VisualMixerSliderU in 'src\gui\VisualMixerSliderU.pas',
 
   // Managers
   PlaylistManagerU in 'src\bus\PlaylistManagerU.pas',
