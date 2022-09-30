@@ -23,6 +23,9 @@ type
     function  GetMixerRect : TRect;
     procedure SetMixerRect(a_recMixer : TRect);
 
+    procedure SetMixerLevel(a_nMixerID : Integer; a_dLevel : Double);
+    function  GetMixerLevel(a_nMixerID : Integer) : Double;
+
     function IncMixer : Integer;
     function DecMixer : Integer;
 
@@ -66,6 +69,18 @@ begin
   m_recMixer.Top    := a_recMixer.Top;
   m_recMixer.Width  := a_recMixer.Width;
   m_recMixer.Height := a_recMixer.Height;
+end;
+
+//==============================================================================
+procedure TMixerManager.SetMixerLevel(a_nMixerID : Integer; a_dLevel : Double);
+begin
+  m_AudioManager.SetMixerLevel(a_nMixerID, a_dLevel);
+end;
+
+//==============================================================================
+function TMixerManager.GetMixerLevel(a_nMixerID : Integer) : Double;
+begin
+  Result := m_AudioManager.GetMixerLevel(a_nMixerID);
 end;
 
 //==============================================================================

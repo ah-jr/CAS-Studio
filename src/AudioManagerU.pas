@@ -11,6 +11,7 @@ uses
   CasDecoderU,
   CasEncoderU,
   CasTrackU,
+  CasMixerU,
   CasTypesU,
   CasConstantsU,
   TypesU;
@@ -50,9 +51,11 @@ type
     procedure BroadcastDriverChange;
     procedure BroadcastBPMChange(a_dOldBPM : Double);
 
+    procedure SetMixerLevel(a_nMixerID : Integer; a_dLevel : Double);
     procedure SetTrackPosition(a_nTrackID : Integer; a_nPosition : Integer);
     procedure SetNewBPM(a_dBPM : Double);
 
+    function  GetMixerLevel(a_nMixerID  : Integer) : Double;
     function  GetTrackSize(a_nTrackID   : Integer) : Integer;
     function  GetTrackData(a_nTrackID   : Integer;
                            var a_pLeft  : PIntArray;
@@ -290,6 +293,24 @@ begin
   dOldBPM := m_dBpm;
   m_dBpm  := a_dBPM;
   BroadcastBPMChange(dOldBPM);
+end;
+
+//==============================================================================
+procedure TAudioManager.SetMixerLevel(a_nMixerID : Integer; a_dLevel : Double);
+var
+  CasMixer : TCasMixer;
+begin
+  if m_CasEngine.Database.GetMixerById(a_nMixerID, CasMixer) then
+    CasMixer.Level := a_dLevel;
+end;
+
+//==============================================================================
+function  TAudioManager.GetMixerLevel(a_nMixerID : Integer) : Double;
+var
+  CasMixer : TCasMixer;
+begin
+  if m_CasEngine.Database.GetMixerById(a_nMixerID, CasMixer) then
+    Result := CasMixer.Level;
 end;
 
 //==============================================================================

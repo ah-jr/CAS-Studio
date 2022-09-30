@@ -64,7 +64,8 @@ end;
 //==============================================================================
 procedure TVisualMixerSlider.Paint(a_f2dCanvas : TF2DCanvas);
 var
-  recSelf : TRect;
+  recSelf  : TRect;
+  recLevel : TRect;
 begin
   recSelf := GetRect;
 
@@ -72,8 +73,12 @@ begin
   a_f2dCanvas.DrawColor := c_clSliderBorder;
   a_f2dCanvas.LineWidth := 2;
 
-  a_f2dCanvas.FillRoundRect(recSelf.TopLeft, recSelf.BottomRight, 5);
   a_f2dCanvas.DrawRoundRect(recSelf.TopLeft, recSelf.BottomRight, 5);
+
+  recLevel := recSelf;
+  recLevel.Top := Trunc(recSelf.Height * (1 - m_mmManager.GetMixerLevel(m_nMixerID)));
+
+  a_f2dCanvas.FillRoundRect(recLevel.TopLeft, recSelf.BottomRight, 5);
 end;
 
 //==============================================================================
@@ -90,8 +95,13 @@ end;
 
 //==============================================================================
 procedure TVisualMixerSlider.MouseUp  (Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  dLevel : Double;
 begin
   Inherited;
+
+  dLevel := (m_mmManager.GetMixerRect.Height - Y) / m_mmManager.GetMixerRect.Height;
+  m_mmManager.SetMixerLevel(m_nMixerID, dLevel);
 end;
 
 //==============================================================================
@@ -107,7 +117,7 @@ begin
     Result.Right := Result.Left + 1;
 
   if Result.Bottom - Result.Top <= 0 then
-    Result.Bottom := Result.Top + 1;    
+    Result.Bottom := Result.Top + 1;
 end;
 
 end.
