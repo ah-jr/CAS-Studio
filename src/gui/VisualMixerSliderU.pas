@@ -83,14 +83,28 @@ end;
 
 //==============================================================================
 procedure TVisualMixerSlider.MouseMove(Shift: TShiftState; X, Y: Integer);
+var
+  dLevel : Double;
 begin
+  if m_vosState.Clicked then
+  begin
+    dLevel := (m_mmManager.GetMixerRect.Height - Y) / m_mmManager.GetMixerRect.Height;
+    m_mmManager.SetMixerLevel(m_nMixerID, dLevel);
+  end;
+
+
   Inherited;
 end;
 
 //==============================================================================
 procedure TVisualMixerSlider.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  dLevel : Double;
 begin
   Inherited;
+
+  dLevel := (m_mmManager.GetMixerRect.Height - Y) / m_mmManager.GetMixerRect.Height;
+  m_mmManager.SetMixerLevel(m_nMixerID, dLevel);
 end;
 
 //==============================================================================

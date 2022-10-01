@@ -146,15 +146,21 @@ end;
 procedure TAudioManager.DecodeReady(var MsgRec: TMessage);
 var
   CasTrack : TCasTrack;
+  nCount   : Integer; //REMOVE THIS IN THE FUTURE
 begin
+  nCount := 1;
+
   for CasTrack in m_CasDecoder.Tracks do
   begin
     CasTrack.Level := 0.7;
     CasTrack.ID    := m_CasEngine.GenerateID;
-    m_CasEngine.AddTrack(CasTrack, 0);
+
+    m_CasEngine.AddTrack(CasTrack, nCount);
     m_CasEngine.AddTrackToPlaylist(CasTrack.ID, m_CasEngine.GetLength);
 
     BroadcastNewTrack(CasTrack.ID);
+
+    Inc(nCount);
   end;
 
   m_CasDecoder.Tracks.Clear;
@@ -309,6 +315,8 @@ function  TAudioManager.GetMixerLevel(a_nMixerID : Integer) : Double;
 var
   CasMixer : TCasMixer;
 begin
+  Result := 0;
+
   if m_CasEngine.Database.GetMixerById(a_nMixerID, CasMixer) then
     Result := CasMixer.Level;
 end;

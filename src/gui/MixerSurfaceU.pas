@@ -355,7 +355,7 @@ var
 begin
   for nIndex := 0 to c_nSliderCount - 1 do
   begin
-    vtSlider := TVisualMixerSlider.Create(m_mmManager, 0);
+    vtSlider := TVisualMixerSlider.Create(m_mmManager, nIndex);  // Don't use index eventually
     m_lstVisualObjects.Add(vtSlider);
   end;
 end;
