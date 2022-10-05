@@ -160,8 +160,6 @@ end;
 
 //==============================================================================
 procedure TMixerSurface.Paint;
-var
-  recSelf : TRect;
 begin
   if m_f2dCanvas = nil then
     F2DInit;

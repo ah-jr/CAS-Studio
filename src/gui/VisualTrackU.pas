@@ -238,6 +238,8 @@ begin
   nPos := 0;
   nMin :=  MaxInt;
   nMax := -MaxInt;
+  nMinPos := 0;
+  nMaxPos := 0;
 
   for nIndex := 0 to nDataSize - 1 do
   begin
@@ -313,6 +315,9 @@ begin
   nAmplitude   := (recSelf.Height - m_nTitleBarHeight - 10) div 2;
   nOffset      := (recSelf.Height + m_nTitleBarHeight) div 2;
   nMax         := Trunc(Math.Power(2, 24 - 1)); // FIX THAT
+
+  nMaxPos := 0;
+  nMinPos := 0;
 
   //////////////////////////////////////////////////////////////////////////////
   nFirstPointIdx := 0;
