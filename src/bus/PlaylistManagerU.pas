@@ -15,7 +15,6 @@ type
 
     m_vtTransform : TVisualTransform;
     m_nSize       : Integer;
-    m_dProgress   : Double;
     m_recPlaylist : TRect;
 
 
@@ -23,29 +22,34 @@ type
     constructor Create(a_AudioManager : TAudioManager);
     destructor  Destroy; override;
 
+    function  XToOffset            (a_dX          : Double)  : Double;
     function  XToBeat              (a_dX          : Double)  : Double;
     function  XToSample            (a_dX          : Double)  : Double;
+    function  OffsetToX            (a_dOffset     : Double)  : Double;
     function  BeatToX              (a_dBeat       : Double)  : Double;
     function  SampleToX            (a_dSample     : Double)  : Double;
     function  GetVisualSize        (a_dSampleSize : Double)  : Double;
     function  GetSampleSize        (a_dVisualSize : Double)  : Double;
     function  GetTrackVisualWidth  (a_nTrackID    : Integer) : Double;
     function  GetTrackVisualHeight : Double;
-    function  GetBeatCount    : Double;
-    function  GetProgressX    : Double;
-    function  GetPlaylistRect : TRect;
+    function  GetBeatCount      : Double;
+    function  GetProgressX      : Double;
+    function  GetProgressOffset : Double;
+    function  GetProgress       : Double;
+    function  GetPlaylistRect   : TRect;
 
     function  GetTrackData(a_nTrackID   : Integer;
                            var a_pLeft  : PIntArray;
                            var a_pRight : PIntArray;
                            var a_nSize  : Integer) : Boolean;
 
+    procedure SetProgress     (a_dProgress : Double);
     procedure SetPlaylistRect (a_recPlaylist : TRect);
     procedure SetTrackPosition(a_nTrackID : Integer; a_nPos : Integer);
 
     property Transform : TVisualTransform read  m_vtTransform write m_vtTransform;
     property Size      : Integer          read  m_nSize       write m_nSize;
-    property Progress  : Double           read  m_dProgress   write m_dProgress;
+    property Progress  : Double           read  GetProgress   write SetProgress;
     property BeatCount : Double           read  GetBeatCount;
 
   end;
@@ -83,26 +87,54 @@ end;
 
 //==============================================================================
 function TPlaylistManager.GetProgressX : Double;
-var
-  dProgress : Double;
-  dX        : Double;
 begin
-  dProgress := m_AudioManager.Engine.Progress;
-  dX        := dProgress*GetBeatCount*c_nBarWidth;
+  Result := OffsetToX(GetProgressOffset);
+end;
 
-  Result := (dX - m_vtTransform.Offset.X) * m_vtTransform.Scale.X;
+//==============================================================================
+function TPlaylistManager.GetProgress : Double;
+begin
+  Result := m_AudioManager.Engine.Progress;
+end;
+
+//==============================================================================
+function TPlaylistManager.GetProgressOffset : Double;
+begin
+  Result := m_AudioManager.Engine.Progress * GetBeatCount * c_nBarWidth;
+end;
+
+//==============================================================================
+procedure TPlaylistManager.SetProgress(a_dProgress : Double);
+var
+  dDist : Double;
+begin
+  // Sync playlist position with progress
+  dDist := (GetPlaylistRect.Width / 4) / Transform.Scale.X;
+  Transform.SetOffsetX(GetProgressOffset - dDist);
+end;
+
+//==============================================================================
+function TPlaylistManager.XToOffset(a_dX : Double) : Double;
+begin
+  Result := (a_dX/m_vtTransform.Scale.X + m_vtTransform.Offset.X);
+end;
+
+//==============================================================================
+function TPlaylistManager.OffsetToX(a_dOffset : Double) : Double;
+begin
+  Result := (a_dOffset - m_vtTransform.Offset.X) * m_vtTransform.Scale.X;
 end;
 
 //==============================================================================
 function TPlaylistManager.XToBeat(a_dX : Double) : Double;
 begin
-  Result := (a_dX/m_vtTransform.Scale.X + m_vtTransform.Offset.X) / c_nBarWidth;
+  Result := XToOffset(a_dX) / c_nBarWidth;
 end;
 
 //==============================================================================
 function TPlaylistManager.BeatToX(a_dBeat : Double) : Double;
 begin
-  Result := (a_dBeat * c_nBarWidth - m_vtTransform.Offset.X) * m_vtTransform.Scale.X;
+  Result := OffsetToX(a_dBeat * c_nBarWidth);
 end;
 
 //==============================================================================

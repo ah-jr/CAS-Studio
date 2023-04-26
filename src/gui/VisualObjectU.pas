@@ -27,7 +27,7 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
     procedure MouseUp  (Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
 
-    function GetRect : TRect; virtual; abstract;
+    function GetRect : TRectF; virtual; abstract;
 
     property State    : TVisualObjectState read m_vosState    write m_vosState;
 
@@ -51,7 +51,7 @@ end;
 procedure TVisualObject.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   m_vosState.Clicked := True;
-  m_pntMouseClick    := Point(X - GetRect.Left, Y - GetRect.Top);
+  m_pntMouseClick    := Point(X - Trunc(GetRect.Left), Y - Trunc(GetRect.Top));
 end;
 
 //==============================================================================

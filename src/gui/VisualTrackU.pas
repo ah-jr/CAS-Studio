@@ -53,7 +53,7 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure MouseUp  (Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
 
-    function GetRect : TRect; override;
+    function GetRect : TRectF; override;
 
     procedure SetLine(a_nLine : Integer);
 
@@ -112,7 +112,7 @@ end;
 //==============================================================================
 procedure TVisualTrack.Paint(a_f2dCanvas : TF2DCanvas);
 var
-  recSelf : TRect;
+  recSelf : TRectF;
 begin
   recSelf := GetRect;
 
@@ -125,7 +125,7 @@ end;
 //==============================================================================
 procedure TVisualTrack.PaintWavePath(a_f2dCanvas : TF2DCanvas);
 var
-  recSelf        : TRect;
+  recSelf        : TRectF;
   pntScale       : TPointF;
   pntScaleChange : TPointF;
   nIndex         : Integer;
@@ -162,7 +162,7 @@ var
   nControlY : Integer;
   dPos      : Double;
   dStepSize : Double;
-  recSelf   : TRect;
+  recSelf   : TRectF;
 begin
   Inherited;
 
@@ -206,12 +206,12 @@ begin
 end;
 
 //==============================================================================
-function TVisualTrack.GetRect : TRect;
+function TVisualTrack.GetRect : TRectF;
 begin
-  Result.Left   := Trunc(m_pmManager.SampleToX(m_nPosition)) + 1;
-  Result.Top    := (m_nHeight - m_pmManager.Transform.Offset.Y) * Trunc(m_pmManager.GetTrackVisualHeight) + 1;
-  Result.Right  := Result.Left + Trunc(m_pmManager.GetTrackVisualWidth(m_nTrackID)) - 1;
-  Result.Bottom := Result.Top  + Trunc(m_pmManager.GetTrackVisualHeight) - 1;
+  Result.Left   := m_pmManager.SampleToX(m_nPosition) + 1;
+  Result.Top    := (m_nHeight - m_pmManager.Transform.Offset.Y) * m_pmManager.GetTrackVisualHeight + 1;
+  Result.Right  := Result.Left + m_pmManager.GetTrackVisualWidth(m_nTrackID) - 1;
+  Result.Bottom := Result.Top  + m_pmManager.GetTrackVisualHeight - 1;
 
   // Prevent negative or null width/height
   if Result.Right - Result.Left <= 0 then
@@ -281,7 +281,7 @@ end;
 //==============================================================================
 procedure TVisualTrack.CalculateWaveSink;
 var
-  recSelf        : TRect;
+  recSelf        : TRectF;
   nTrackIdx      : Integer;
   nFragIdx       : Integer;
   nMax           : Integer;
@@ -312,8 +312,8 @@ begin
   m_dPathScale := m_pmManager.Transform.Scale.X;
   dScreenRatio := (recSelf.Width - 2 * DATAOFFSET) / nPathSize;
   dTrackRatio  := nDataSize / nPathSize;
-  nAmplitude   := (recSelf.Height - m_nTitleBarHeight - 10) div 2;
-  nOffset      := (recSelf.Height + m_nTitleBarHeight) div 2;
+  nAmplitude   := Trunc(recSelf.Height - m_nTitleBarHeight - 10) div 2;
+  nOffset      := Trunc(recSelf.Height + m_nTitleBarHeight) div 2;
   nMax         := Trunc(Math.Power(2, 24 - 1)); // FIX THAT
 
   nMaxPos := 0;

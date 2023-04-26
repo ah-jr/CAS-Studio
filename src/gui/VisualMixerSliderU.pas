@@ -32,7 +32,7 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure MouseUp  (Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
 
-    function GetRect : TRect; override;
+    function GetRect : TRectF; override;
 
     property Position : Integer read m_nPosition;
     property MixerID  : Integer read m_nMixerID  write m_nMixerID;
@@ -64,8 +64,8 @@ end;
 //==============================================================================
 procedure TVisualMixerSlider.Paint(a_f2dCanvas : TF2DCanvas);
 var
-  recSelf  : TRect;
-  recLevel : TRect;
+  recSelf  : TRectF;
+  recLevel : TRectF;
 begin
   recSelf := GetRect;
 
@@ -76,7 +76,7 @@ begin
   a_f2dCanvas.DrawRoundRect(recSelf.TopLeft, recSelf.BottomRight, 5);
 
   recLevel := recSelf;
-  recLevel.Top := Trunc(recSelf.Height * (1 - m_mmManager.GetMixerLevel(m_nMixerID)));
+  recLevel.Top := recSelf.Height * (1 - m_mmManager.GetMixerLevel(m_nMixerID));
 
   recLevel.Inflate(-3,-2);
 
@@ -121,7 +121,7 @@ begin
 end;
 
 //==============================================================================
-function TVisualMixerSlider.GetRect : TRect;
+function TVisualMixerSlider.GetRect : TRectF;
 begin
   Result.Left   := c_nMixerWidth * m_nPosition;
   Result.Top    := 0;

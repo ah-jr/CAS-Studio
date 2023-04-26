@@ -46,10 +46,11 @@ type
   end;
 
   TVisualTransform = record
-    Offset  : TPoint;
+    Offset  : TPointF;
     Scale   : TPointF;
 
-    procedure SetOffset(a_pntOffset : TPoint); overload;
+    class operator Initialize (out rec: TVisualTransform);
+    procedure SetOffset(a_pntOffset : TPointF); overload;
     procedure SetOffset(a_nX, a_nY : Double); overload;
     procedure SetOffsetX(a_nX : Double);
     procedure SetOffsetY(a_nY : Double);
@@ -69,7 +70,14 @@ uses
   Math;
 
 //==============================================================================
-procedure TVisualTransform.SetOffset(a_pntOffset : TPoint);
+class operator TVisualTransform.Initialize (out rec: TVisualTransform);
+begin
+  rec.Offset := TPointF.Create(1, 1);
+  rec.Scale  := TPointF.Create(1, 1);
+end;
+
+//==============================================================================
+procedure TVisualTransform.SetOffset(a_pntOffset : TPointF);
 begin
   Offset.X := Max(0, a_pntOffset.X);
   Offset.Y := Max(0, a_pntOffset.Y);
@@ -78,20 +86,20 @@ end;
 //==============================================================================
 procedure TVisualTransform.SetOffset(a_nX, a_nY : Double);
 begin
-  Offset.X := Max(0, Trunc(a_nX));
-  Offset.Y := Max(0, Trunc(a_nY));
+  Offset.X := Max(0, a_nX);
+  Offset.Y := Max(0, a_nY);
 end;
 
 //==============================================================================
 procedure TVisualTransform.SetOffsetX(a_nX : Double);
 begin
-  Offset.X := Max(0, Trunc(a_nX));
+  Offset.X := Max(0, a_nX);
 end;
 
 //==============================================================================
 procedure TVisualTransform.SetOffsetY(a_nY : Double);
 begin
-  Offset.Y := Max(0, Trunc(a_nY));
+  Offset.Y := Max(0, a_nY);
 end;
 
 //==============================================================================
