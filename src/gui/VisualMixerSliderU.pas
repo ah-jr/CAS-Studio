@@ -78,7 +78,9 @@ begin
   recLevel := recSelf;
   recLevel.Top := Trunc(recSelf.Height * (1 - m_mmManager.GetMixerLevel(m_nMixerID)));
 
-  a_f2dCanvas.FillRoundRect(recLevel.TopLeft, recSelf.BottomRight, 5);
+  recLevel.Inflate(-3,-2);
+
+  a_f2dCanvas.FillRoundRect(recLevel.TopLeft, recLevel.BottomRight, 5);
 end;
 
 //==============================================================================

@@ -28,12 +28,12 @@ const
 
   //////////////////////////////////////////////////////////////////////////////
   ///  Colors
-  c_clPlayList   = $E0252525;
-  c_clGridLines  = $50AFAFAF;
+  c_clPlayList   = $80202020;
+  c_clGridLines  = $406F6F6F;
   c_clTrackBack  = $D0161718;
   c_clPosLine    = $FF0080FF;
-  c_clMixer      = $E0252525;
-  c_clSliderBack   = $FFFF8B64;
+  c_clMixer      = $80202020;
+  c_clSliderBack   = $BFFF8B64;
   c_clSliderBorder = $90FFFFFF;
 
 

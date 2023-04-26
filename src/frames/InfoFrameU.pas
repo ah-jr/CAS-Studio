@@ -53,8 +53,7 @@ begin
   lblTitle.Top            := 5;
   lblTitle.Width          := Width - 10;
   lblTitle.Height         := 40;
-  lblTitle.Color          := Body.Color;
-  lblTitle.WithBackground := True;
+  lblTitle.WithBackground := False;
   lblTitle.Font.Size      := 11;
   lblTitle.Font.Style     := [fsBold];
   lblTitle.Text           := 'Cas Studio 1.0';
@@ -65,9 +64,8 @@ begin
   lblText.Top             := 45;
   lblText.Width           := Width - 10;
   lblText.Height          := Height - 10;
-  lblText.Color           := Body.Color;
   lblText.Font.Size       := 9;
-  lblText.WithBackground  := True;
+  lblText.WithBackground  := False;
 
   lblText.Texts.Add('Created by A. H. Junior - 2021');
   lblText.Texts.Add('Version 1.0');

@@ -72,6 +72,7 @@ type
     pnlDesktop            : TAcrylicGhostPanel;
     Panel1: TPanel;
     NumberBox1: TNumberBox;
+    pnlControls: TAcrylicGhostPanel;
 
     procedure FormCreate                 (Sender: TObject);
     procedure FormDestroy                (Sender: TObject);
@@ -165,7 +166,7 @@ begin
   BackColor   := $1F1F1F;
   WithBorder  := True;
   BorderColor := $A064FFFF;
-  BlurAmount  := 210;
+  BlurAmount  := 220;
   KeyPreview  := True;
   Resizable   := True;
   Left        := 30;
@@ -253,6 +254,26 @@ begin
 
   m_PopUp := TAcrylicPopup.Create(Self);
   m_PopUp.Parent := Self;
+
+  //////////////////////////////////////////////////////////////////////////////
+  ///  BringIcons to the pnlControls
+  imgClose.Parent         := pnlControls;
+  imgCloseHover.Parent    := pnlControls;
+  imgMinimize.Parent      := pnlControls;
+  imgMinimizeHover.Parent := pnlControls;
+  imgMaximize.Parent      := pnlControls;
+  imgMaximizeHover.Parent := pnlControls;
+
+  pnlControls.Colored     := True;
+  pnlControls.Color       := $20303050;
+  pnlControls.Bordercolor := $84AAAAAA;
+  pnlControls.WithBorder  := True;
+
+  pnlDesktop.Bordercolor  := c_clCtrlBorder;
+
+  WithBorder            := True;
+  BorderColor           := c_clFormBorder;
+  DisableBlurWhenSizing := False;
 end;
 
 //==============================================================================
