@@ -9,14 +9,17 @@ uses
   TypesU;
 
 type
+  TToolType= (ttMove,
+              ttCut);
+
   TPlaylistManager = class
   private
-    m_AudioManager : TAudioManager;
+    m_AudioManager   : TAudioManager;
 
-    m_vtTransform : TVisualTransform;
-    m_nSize       : Integer;
-    m_recPlaylist : TRect;
-
+    m_vtTransform    : TVisualTransform;
+    m_nSize          : Integer;
+    m_recPlaylist    : TRect;
+    m_ttSelectedTool : TToolType;
 
   public
     constructor Create(a_AudioManager : TAudioManager);
@@ -47,10 +50,11 @@ type
     procedure SetPlaylistRect (a_recPlaylist : TRect);
     procedure SetTrackPosition(a_nTrackID : Integer; a_nPos : Integer);
 
-    property Transform : TVisualTransform read  m_vtTransform write m_vtTransform;
-    property Size      : Integer          read  m_nSize       write m_nSize;
-    property Progress  : Double           read  GetProgress   write SetProgress;
-    property BeatCount : Double           read  GetBeatCount;
+    property SelectedTool : TToolType        read  m_ttSelectedTool write m_ttSelectedTool;
+    property Transform    : TVisualTransform read  m_vtTransform    write m_vtTransform;
+    property Size         : Integer          read  m_nSize          write m_nSize;
+    property Progress     : Double           read  GetProgress      write SetProgress;
+    property BeatCount    : Double           read  GetBeatCount;
 
   end;
 
@@ -64,6 +68,8 @@ constructor TPlaylistManager.Create(a_AudioManager : TAudioManager);
 begin
   m_AudioManager := a_AudioManager;
   m_recPlaylist  := TRect.Create(-1,-1,-1,-1);
+
+  m_ttSelectedTool := ttMove;
 end;
 
 //==============================================================================

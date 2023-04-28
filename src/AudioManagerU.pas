@@ -85,17 +85,18 @@ type
     function  GetDuration   : String;
     function  GenerateID    : Integer;
 
+    function  IsTrackPlaying(a_nTrackID : Integer) : Boolean;
     function  GetTrackCount : Integer;
-    function  GetActiveTracks : TList<Integer>;
-    function  GetTrackProgress(a_nTrackId : Integer) : Double;
-    function  AddTrackToPlaylist(a_nTrackId, a_nPosition : Integer) : Boolean;
-    function  AddTrack(a_CasTrack : TCasTrack; a_nMixerId : Integer) : Boolean;
+    function  GetActiveTrackInstances : TList<TTrackInstance>;
+    function  GetTrackInstanceProgress(a_nInstID : Integer) : Double;
+    function  AddTrackToPlaylist(a_nTrackID, a_nPosition : Integer) : Boolean;
+    function  AddTrack(a_CasTrack : TCasTrack; a_nMixerID : Integer) : Boolean;
 
     procedure ControlPanel;
     procedure SetLevel     (a_dLevel : Double);
     procedure SetPosition  (a_nPosition : Integer);
     procedure ChangeDriver (a_dtDriverType : TDriverType; a_nID : Integer);
-    procedure DeleteTrack(a_nTrackId : Integer);
+    procedure DeleteTrack(a_nTrackID : Integer);
     procedure ClearTracks;
     procedure CalculateBuffers(a_LeftOut : CasTypesU.PIntArray; a_RightOut : CasTypesU.PIntArray);
 
@@ -376,20 +377,23 @@ function  TAudioManager.GetTime       : String;   begin Result := m_CasEngine.Ge
 function  TAudioManager.GetDuration   : String;   begin Result := m_CasEngine.GetDuration; end;
 function  TAudioManager.GenerateID    : Integer;  begin Result := m_CasEngine.GenerateID; end;
 
+function TAudioManager.IsTrackPlaying(a_nTrackID : Integer) : Boolean;
+begin Result := m_CasEngine.IsTrackPlaying(a_nTrackID) end;
+
 function TAudioManager.GetTrackCount : Integer;
 begin Result := m_CasEngine.GetTrackCount end;
 
-function TAudioManager.GetActiveTracks : TList<Integer>;
-begin Result := m_CasEngine.GetActiveTracks; end;
+function TAudioManager.GetActiveTrackInstances : TList<TTrackInstance>;
+begin Result := m_CasEngine.GetActiveTrackInstances; end;
 
-function TAudioManager.GetTrackProgress(a_nTrackId : Integer) : Double;
-begin Result := m_CasEngine.GetTrackProgress(a_nTrackId); end;
+function TAudioManager.GetTrackInstanceProgress(a_nInstID : Integer) : Double;
+begin Result := m_CasEngine.GetTrackInstanceProgress(a_nInstID); end;
 
-function TAudioManager.AddTrackToPlaylist(a_nTrackId, a_nPosition : Integer) : Boolean;
-begin Result := m_CasEngine.AddTrackToPlaylist(a_nTrackId, a_nPosition); end;
+function TAudioManager.AddTrackToPlaylist(a_nTrackID, a_nPosition : Integer) : Boolean;
+begin Result := m_CasEngine.AddTrackToPlaylist(a_nTrackID, a_nPosition); end;
 
-function TAudioManager.AddTrack(a_CasTrack : TCasTrack; a_nMixerId : Integer) : Boolean;
-begin Result := m_CasEngine.AddTrack(a_CasTrack, a_nMixerId); end;
+function TAudioManager.AddTrack(a_CasTrack : TCasTrack; a_nMixerID : Integer) : Boolean;
+begin Result := m_CasEngine.AddTrack(a_CasTrack, a_nMixerID); end;
 
 procedure TAudioManager.ControlPanel;
 begin m_CasEngine.ControlPanel; end;
@@ -403,8 +407,8 @@ begin m_CasEngine.SetPosition(a_nPosition); end;
 procedure TAudioManager.ChangeDriver(a_dtDriverType : TDriverType; a_nID : Integer);
 begin m_CasEngine.ChangeDriver(a_dtDriverType, a_nID); end;
 
-procedure TAudioManager.DeleteTrack(a_nTrackId : Integer);
-begin m_CasEngine.DeleteTrack(a_nTrackId); end;
+procedure TAudioManager.DeleteTrack(a_nTrackID : Integer);
+begin m_CasEngine.DeleteTrack(a_nTrackID); end;
 
 procedure TAudioManager.ClearTracks;
 begin m_CasEngine.ClearTracks; end;

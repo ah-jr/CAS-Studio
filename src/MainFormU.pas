@@ -568,7 +568,7 @@ end;
 //==============================================================================
 procedure TMainForm.UpdateBufferPosition;
 var
-  CasTrack  : TCasTrack;
+  lstActive : TList<TTrackInstance>;
 begin
   if not m_bBlockPosUpdate then
   begin
@@ -576,17 +576,24 @@ begin
       m_AudioManager.SetPosition(Trunc(tbProgress.Level * m_AudioManager.GetLength))
     else
     begin
-      if (m_AudioManager.GetActiveTracks.Count > 0) and
-         (m_AudioManager.GetTrackById(m_AudioManager.GetActiveTracks.Items[0], CasTrack)) then
+      lstActive := m_AudioManager.GetActiveTrackInstances;
+
+      if (lstActive.Count > 0) then
       begin
-        m_AudioManager.SetPosition(CasTrack.Position + Trunc(tbProgress.Level * CasTrack.Size));
+        m_AudioManager.SetPosition(lstActive.Items[0].Position +
+                                   lstActive.Items[0].First +
+                                   Trunc(tbProgress.Level * lstActive.Items[0].Last));
       end;
+
+      lstActive.Free;
     end;
   end;
 end;
 
 //==============================================================================
 procedure TMainForm.UpdateProgressBar;
+var
+  lstActive : TList<TTrackInstance>;
 begin
   m_bBlockPosUpdate := True;
   if m_bPlaylistBar then
@@ -596,9 +603,11 @@ begin
   end
   else
   begin
-    if m_AudioManager.GetActiveTracks.Count > 0 then
+    lstActive := m_AudioManager.GetActiveTrackInstances;
+
+    if lstActive.Count > 0 then
     begin
-      tbProgress.Level := m_AudioManager.GetTrackProgress(m_AudioManager.GetActiveTracks.Items[0]);
+      tbProgress.Level := m_AudioManager.GetTrackInstanceProgress(lstActive.Items[0].InstID);
       lblTime.Text     := m_AudioManager.GetTime + '/' + m_AudioManager.GetDuration;
     end
     else
@@ -606,6 +615,8 @@ begin
       tbProgress.Level := 0;
       lblTime.Text     := m_AudioManager.GetTime + '/' + m_AudioManager.GetDuration;
     end;
+
+    lstActive.Free;
   end;
   m_bBlockPosUpdate := False;
 end;
