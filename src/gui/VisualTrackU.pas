@@ -27,7 +27,7 @@ type
 
   TVisualTrack = class(TVisualObject)
   private
-    m_nTrackID   : Integer;
+    m_nClipID   : Integer;
     m_pmManager  : TPlaylistManager;
     m_nHeight    : Integer;
     m_nPosition  : Integer;
@@ -43,7 +43,7 @@ type
   procedure CreateAvgPointsList(a_dctAvgPoints : TDictionary<Integer, TVisualAvgPoint>; a_nInterval : Integer);
 
   public
-    constructor Create(a_pmManager : TPlaylistManager; a_nTrackID : Integer);
+    constructor Create(a_pmManager : TPlaylistManager; m_aClipID : Integer);
     destructor Destroy; override;
 
     procedure Paint        (a_f2dCanvas : TF2DCanvas); override;
@@ -59,7 +59,7 @@ type
 
     property Height   : Integer read m_nHeight   write SetLine;
     property Position : Integer read m_nPosition write m_nPosition;
-    property TrackID  : Integer read  m_nTrackID write m_nTrackID;
+    property ClipID   : Integer read m_nClipID   write m_nClipID;
   end;
 
 implementation
@@ -68,13 +68,14 @@ uses
   Winapi.Windows,
   System.UITypes,
   TypesU,
+  CasClipU,
   Math;
 
 //==============================================================================
-constructor TVisualTrack.Create(a_pmManager : TPlaylistManager; a_nTrackID : Integer);
+constructor TVisualTrack.Create(a_pmManager : TPlaylistManager; m_aClipID : Integer);
 begin
   Inherited Create;
-  m_nTrackID    := a_nTrackID;
+  m_nClipID     := m_aClipID;
   m_pmManager   := a_pmManager;
   m_nPosition   := 0;
   m_nHeight     := 0;
@@ -166,26 +167,37 @@ var
 begin
   Inherited;
 
-  SetCursor(LoadCursor(0, IDC_SIZEALL));
+  case m_pmManager.SelectedTool of
+    ttCut :
+      begin
+        SetCursor(LoadCursor(0, IDC_IBEAM));
+      end;
 
-  if m_vosState.Clicked then
-  begin
-    recSelf   := GetRect;
-    nControlX := X - m_pntMouseClick.X;
-    nControlY := Y;
+    ttMove :
+      begin
+        SetCursor(LoadCursor(0, IDC_SIZEALL));
 
-    dStep     := m_pmManager.Transform.Scale.X * c_nBarWidth/c_nBarSplit;
-    dStepSize := m_pmManager.GetSampleSize(dStep);
-    dPos      := m_pmManager.XToSample(nControlX);
+        if m_vosState.Clicked then
+        begin
+          recSelf   := GetRect;
+          nControlX := X - m_pntMouseClick.X;
+          nControlY := Y;
 
-    m_nPosition := Trunc(Trunc(dPos / dStepSize) * dStepSize);
+          dStep     := m_pmManager.Transform.Scale.X * c_nBarWidth/c_nBarSplit;
+          dStepSize := m_pmManager.GetSampleSize(dStep);
+          dPos      := m_pmManager.XToSample(nControlX);
 
-    if Abs(recSelf.Top + m_pmManager.GetTrackVisualHeight / 2 - nControlY) > m_pmManager.GetTrackVisualHeight then
-      m_nHeight := Trunc(nControlY / m_pmManager.GetTrackVisualHeight);
+          m_nPosition := Trunc(Trunc(dPos / dStepSize) * dStepSize);
 
-    m_nPosition := Max(m_nPosition, 0);
-    m_nHeight   := Max(m_nHeight,   0);
+          if Abs(recSelf.Top + m_pmManager.GetClipVisualHeight / 2 - nControlY) > m_pmManager.GetClipVisualHeight then
+            m_nHeight := Trunc(nControlY / m_pmManager.GetClipVisualHeight);
+
+          m_nPosition := Max(m_nPosition, 0);
+          m_nHeight   := Max(m_nHeight,   0);
+        end;
+      end;
   end;
+
 end;
 
 //==============================================================================
@@ -197,9 +209,18 @@ end;
 //==============================================================================
 procedure TVisualTrack.MouseUp  (Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  if m_vosState.Clicked then
-  begin
-    m_pmManager.SetTrackPosition(m_nTrackID, m_nPosition);
+  case m_pmManager.SelectedTool of
+    ttCut :
+      begin
+        m_pmManager.CutClip(m_nClipID, Trunc(m_pmManager.XToSample(X)), m_nHeight);
+      end;
+    ttMove :
+      begin
+        if m_vosState.Clicked then
+        begin
+          m_pmManager.SetClipPos(m_nClipID, m_nPosition);
+        end;
+      end;
   end;
 
   Inherited;
@@ -209,9 +230,9 @@ end;
 function TVisualTrack.GetRect : TRectF;
 begin
   Result.Left   := m_pmManager.SampleToX(m_nPosition) + 1;
-  Result.Top    := (m_nHeight - m_pmManager.Transform.Offset.Y) * m_pmManager.GetTrackVisualHeight + 1;
-  Result.Right  := Result.Left + m_pmManager.GetTrackVisualWidth(m_nTrackID) - 1;
-  Result.Bottom := Result.Top  + m_pmManager.GetTrackVisualHeight - 1;
+  Result.Top    := (m_nHeight - m_pmManager.Transform.Offset.Y) * m_pmManager.GetClipVisualHeight + 1;
+  Result.Right  := Result.Left + m_pmManager.GetClipVisualWidth(m_nClipID) - 1;
+  Result.Bottom := Result.Top  + m_pmManager.GetClipVisualHeight - 1;
 
   // Prevent negative or null width/height
   if Result.Right - Result.Left <= 0 then
@@ -234,7 +255,7 @@ var
   nMinPos : Integer;
   nPos : Integer;
 begin
-  m_pmManager.GetTrackData(m_nTrackID, pData, pData, nDataSize);
+  m_pmManager.GetTrackData(m_nClipID, pData, pData, nDataSize);
   nPos := 0;
   nMin :=  MaxInt;
   nMax := -MaxInt;
@@ -298,15 +319,17 @@ var
   nDataSize      : Integer;
   nFirstPointIdx : Integer;                            mode : Integer;
   nLastPointIdx  : Integer;                    nMinPos, nMaxPos : Integer;   nFirst, nSec, nThird : Integer;     nSecPos, nTrdPos : Integer;
+  nClipOffset    : Integer;
+  DATAOFFSET     : Integer;
 const
-  DATAOFFSET = 0;
   m_nTitleBarHeight = 0;
 begin
   recSelf      := GetRect;
   nPathSize    := Trunc(recSelf.Width) + 1;
   pData        := nil;
 
-  m_pmManager.GetTrackData(m_nTrackID, pData, pData, nDataSize);                       size := 10;
+  nClipOffset := m_pmManager.GetClipOffset(m_nClipID);           DATAOFFSET := 0;
+  m_pmManager.GetTrackData(m_nClipID, pData, pData, nDataSize);                       size := 10;
 
   m_lstWavePoints.Clear;
   m_dPathScale := m_pmManager.Transform.Scale.X;

@@ -33,22 +33,28 @@ type
     function  SampleToX            (a_dSample     : Double)  : Double;
     function  GetVisualSize        (a_dSampleSize : Double)  : Double;
     function  GetSampleSize        (a_dVisualSize : Double)  : Double;
-    function  GetTrackVisualWidth  (a_nTrackID    : Integer) : Double;
-    function  GetTrackVisualHeight : Double;
+    function  GetClipVisualWidth   (a_nClipID     : Integer) : Double;
+    function  GetClipVisualHeight : Double;
     function  GetBeatCount      : Double;
     function  GetProgressX      : Double;
     function  GetProgressOffset : Double;
     function  GetProgress       : Double;
     function  GetPlaylistRect   : TRect;
 
-    function  GetTrackData(a_nTrackID   : Integer;
+    function  GetTrackData(a_nClipID    : Integer;
                            var a_pLeft  : PIntArray;
                            var a_pRight : PIntArray;
                            var a_nSize  : Integer) : Boolean;
 
     procedure SetProgress     (a_dProgress : Double);
     procedure SetPlaylistRect (a_recPlaylist : TRect);
-    procedure SetTrackPosition(a_nTrackID : Integer; a_nPos : Integer);
+    procedure SetClipPos      (a_nClipID : Integer; a_nPos : Integer);
+    procedure CutClip         (a_nClipID : Integer; a_nPos : Integer; a_nHeight : Integer);
+
+    function  GetClipPos    (a_nClipId : Integer) : Integer;
+    function  GetClipSize   (a_nClipId : Integer) : Integer;
+    function  GetClipOffset (a_nClipId : Integer) : Integer;
+    function  GetClipTrackID(a_nClipId : Integer) : Integer;
 
     property SelectedTool : TToolType        read  m_ttSelectedTool write m_ttSelectedTool;
     property Transform    : TVisualTransform read  m_vtTransform    write m_vtTransform;
@@ -174,9 +180,9 @@ var
   dBPM        : Double;
   dBeats      : Double;
 begin
-  dSampleRate    := m_AudioManager.Engine.SampleRate;
-  dBPM           := m_AudioManager.BPM;
-  dBeats         := MsToBeats(dBPM, SampleCountToMs(a_dSampleSize, dSampleRate));
+  dSampleRate := m_AudioManager.Engine.SampleRate;
+  dBPM        := m_AudioManager.BPM;
+  dBeats      := MsToBeats(dBPM, SampleCountToMs(a_dSampleSize, dSampleRate));
 
   Result := dBeats * c_nBarWidth * m_vtTransform.Scale.X;
 end;
@@ -188,48 +194,54 @@ var
   dBPM        : Double;
   dMs         : Double;
 begin
-  dSampleRate    := m_AudioManager.Engine.SampleRate;
-  dBPM           := m_AudioManager.BPM;
-  dMs            := BeatsToMs(dBPM, a_dVisualSize / (c_nBarWidth * m_vtTransform.Scale.X));
+  dSampleRate := m_AudioManager.Engine.SampleRate;
+  dBPM        := m_AudioManager.BPM;
+  dMs         := BeatsToMs(dBPM, a_dVisualSize / (c_nBarWidth * m_vtTransform.Scale.X));
 
   Result := MsToSampleCount(dMs, dSampleRate);
 end;
 
 //==============================================================================
-function TPlaylistManager.GetTrackVisualWidth(a_nTrackID : Integer) : Double;
+function TPlaylistManager.GetClipVisualWidth(a_nClipID : Integer) : Double;
 var
   dSampleRate : Double;
   dBPM        : Double;
   dBeats      : Double;
   nSize       : Integer;
 begin
-  dSampleRate    := m_AudioManager.Engine.SampleRate;
-  dBPM           := m_AudioManager.BPM;
-  nSize          := m_AudioManager.GetTrackSize(a_nTrackID);
-  dBeats         := MsToBeats(dBPM, SampleCountToMs(nSize, dSampleRate));
+  dSampleRate := m_AudioManager.Engine.SampleRate;
+  dBPM        := m_AudioManager.BPM;
+  nSize       := m_AudioManager.GetClipSize(a_nClipID);
+  dBeats      := MsToBeats(dBPM, SampleCountToMs(nSize, dSampleRate));
 
   Result := (dBeats * c_nBarWidth * m_vtTransform.Scale.X);
 end;
 
 //==============================================================================
-function TPlaylistManager.GetTrackVisualHeight : Double;
+function TPlaylistManager.GetClipVisualHeight : Double;
 begin
   Result := c_nLineHeight * m_vtTransform.Scale.Y;
 end;
 
 //==============================================================================
-procedure TPlaylistManager.SetTrackPosition(a_nTrackID : Integer; a_nPos : Integer);
+procedure TPlaylistManager.SetClipPos(a_nClipID : Integer; a_nPos : Integer);
 begin
-  m_AudioManager.SetTrackPosition(a_nTrackID, a_nPos);
+  m_AudioManager.SetClipPos(a_nClipID, a_nPos);
 end;
 
 //==============================================================================
-function TPlaylistManager.GetTrackData(a_nTrackID   : Integer;
+procedure TPlaylistManager.CutClip(a_nClipID : Integer; a_nPos : Integer; a_nHeight : Integer);
+begin
+  m_AudioManager.CutClip(a_nClipID, a_nPos, a_nHeight);
+end;
+
+//==============================================================================
+function TPlaylistManager.GetTrackData(a_nClipID    : Integer;
                                        var a_pLeft  : PIntArray;
                                        var a_pRight : PIntArray;
                                        var a_nSize  : Integer) : Boolean;
 begin
-  Result := m_AudioManager.GetTrackData(a_nTrackID, a_pLeft, a_pRight, a_nSize);
+  Result := m_AudioManager.GetTrackDataByClipID(a_nClipID, a_pLeft, a_pRight, a_nSize);
 end;
 
 //==============================================================================
@@ -248,6 +260,30 @@ begin
   m_recPlaylist.Top    := a_recPlaylist.Top;
   m_recPlaylist.Width  := a_recPlaylist.Width;
   m_recPlaylist.Height := a_recPlaylist.Height;
+end;
+
+//==============================================================================
+function TPlaylistManager.GetClipPos(a_nClipId: Integer) : Integer;
+begin
+  Result := m_AudioManager.GetClipPos(a_nClipId);
+end;
+
+//==============================================================================
+function TPlaylistManager.GetClipSize(a_nClipId: Integer) : Integer;
+begin
+  Result := m_AudioManager.GetClipSize(a_nClipId);
+end;
+
+//==============================================================================
+function TPlaylistManager.GetClipOffset(a_nClipId: Integer) : Integer;
+begin
+  Result := m_AudioManager.GetClipOffset(a_nClipId);
+end;
+
+//==============================================================================
+function TPlaylistManager.GetClipTrackID(a_nClipId: Integer) : Integer;
+begin
+  Result := m_AudioManager.GetClipTrackID(a_nClipId);
 end;
 
 //==============================================================================

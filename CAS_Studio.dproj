@@ -128,6 +128,7 @@
         <DCCReference Include="deps\CasAudioEngine\src\CasAsioU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasDirectSoundU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasDsThreadU.pas"/>
+        <DCCReference Include="deps\CasAudioEngine\src\CasClipU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasTrackU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasMixerU.pas"/>
         <DCCReference Include="deps\CasAudioEngine\src\CasPlaylistU.pas"/>

@@ -61,6 +61,7 @@ type
 
     procedure UpdateBPM     (a_dOldBPM, a_dNewBPM : Double);
     procedure UpdateProgress(a_dProgress : Double);
+    procedure AddClip       (a_nClipID   : Integer; a_nIndex : Integer = -1);
     procedure AddTrack      (a_nTrackID  : Integer);
     procedure RemoveTrack   (a_nTrackID  : Integer);
     procedure UpdateGUI;
@@ -113,7 +114,7 @@ begin
     if VisualObject is TVisualTrack then
     begin
       a_nNewPos := Trunc((VisualObject as TVisualTrack).Position * (a_dOldBPM/a_dNewBPM));
-      m_pmManager.SetTrackPosition((VisualObject as TVisualTrack).TrackID, a_nNewPos);
+      m_pmManager.SetClipPos((VisualObject as TVisualTrack).ClipID, a_nNewPos);
       (VisualObject as TVisualTrack).Position := a_nNewPos;
     end;
   end;
@@ -140,14 +141,23 @@ begin
 end;
 
 //==============================================================================
-procedure TPlaylistSurface.AddTrack(a_nTrackID : Integer);
+procedure TPlaylistSurface.AddClip(a_nClipID : Integer; a_nIndex : Integer);
 var
   vtTrack : TVisualTrack;
 begin
-  vtTrack := TVisualTrack.Create(m_pmManager, a_nTrackID);
-  vtTrack.SetLine(m_lstVisualObjects.Count);
+  vtTrack := TVisualTrack.Create(m_pmManager, a_nClipID);
+  vtTrack.Position := m_pmManager.GetClipPos(a_nClipID);
+
+  if a_nIndex >= 0 then
+    vtTrack.SetLine(a_nIndex);
 
   m_lstVisualObjects.Add(vtTrack);
+end;
+
+//==============================================================================
+procedure TPlaylistSurface.AddTrack(a_nTrackID : Integer);
+begin
+  //
 end;
 
 //==============================================================================
@@ -155,18 +165,23 @@ procedure TPlaylistSurface.RemoveTrack(a_nTrackID : Integer);
 var
   nIndex   : Integer;
   voObject : TVisualObject;
+  nTrackID : Integer;
 begin
   inherited;
 
-  for nIndex := 0 to m_lstVisualObjects.Count - 1 do
+  for nIndex := m_lstVisualObjects.Count - 1 downto 0 do
   begin
     voObject := m_lstVisualObjects.Items[nIndex];
 
     if (voObject is TVisualTrack) then
     begin
-      m_lstVisualObjects.Remove(voObject);
-      (voObject as TVisualTrack).Free;
-      Break;
+      nTrackID := m_pmManager.GetClipTrackID((voObject as TVisualTrack).ClipID);
+
+      if nTrackID < 0 then
+      begin
+        m_lstVisualObjects.Remove(voObject);
+        (voObject as TVisualTrack).Free;
+      end;
     end
   end;
 end;
@@ -219,16 +234,16 @@ begin
   //////////////////////////////////////////////////////////////////////////////
   ///  Horizontal Lines
   nIndex := 0;
-  pntA := PointF(0,     nIndex*m_pmManager.GetTrackVisualHeight + 0.5);
-  pntB := PointF(Width, nIndex*m_pmManager.GetTrackVisualHeight + 0.5);
+  pntA := PointF(0,     nIndex*m_pmManager.GetClipVisualHeight + 0.5);
+  pntB := PointF(Width, nIndex*m_pmManager.GetClipVisualHeight + 0.5);
 
   while pntA.Y < ClientHeight do
   begin
     m_f2dCanvas.DrawLine(pntA, pntB);
 
     Inc(nIndex);
-    pntA := PointF(0,     nIndex*m_pmManager.GetTrackVisualHeight + 0.5);
-    pntB := PointF(Width, nIndex*m_pmManager.GetTrackVisualHeight + 0.5);
+    pntA := PointF(0,     nIndex*m_pmManager.GetClipVisualHeight + 0.5);
+    pntB := PointF(Width, nIndex*m_pmManager.GetClipVisualHeight + 0.5);
   end;
 end;
 

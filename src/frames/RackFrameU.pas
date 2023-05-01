@@ -48,6 +48,7 @@ uses
 
     procedure UpdateBPM     (a_dOldBPM, a_dNewBPM : Double);
     procedure UpdateProgress(a_dProgress : Double);
+    procedure AddClip       (a_nClipID   : Integer; a_nIndex : Integer = -1);
     procedure AddTrack      (a_nTrackID  : Integer);
     procedure RemoveTrack   (a_nTrackID  : Integer);
     procedure UpdateGUI;
@@ -79,7 +80,8 @@ uses
   Vcl.Imaging.pngimage,
   AcrylicTrackU,
   AcrylicUtilsU,
-  AcrylicButtonU;
+  AcrylicButtonU,
+  CasTypesU;
 
 //==============================================================================
 constructor TRackFrame.Create(AOwner : TComponent; a_AudioManager : TAudioManager);
@@ -136,7 +138,7 @@ begin
   pnlTrack.Width       := m_sbTracks.ScrollPanel.Width - 2 * c_nPanelOffset;
   pnlTrack.Height      := c_nPanelHeight;
   pnlTrack.Left        := c_nPanelOffset;
-  pnlTrack.Top         := (m_AudioManager.GetTrackCount - 1) * (c_nPanelGap + c_nPanelHeight) + c_nFirstPanelTop;
+  pnlTrack.Top         := (m_AudioManager.Engine.GetTrackCount - 1) * (c_nPanelGap + c_nPanelHeight) + c_nFirstPanelTop;
 
   m_sbTracks.AddControl(pnlTrack);
   m_lstTracks.Add(pnlTrack);
@@ -215,7 +217,7 @@ begin
   AcrylicTrack.OnClick := trackClick;
   AcrylicTrack.OnMouseWheelUp   := trackWheelUp;
   AcrylicTrack.OnMouseWheelDown := trackWheelDown;
-  AcrylicTrack.Text    := IntToStr(m_AudioManager.GetTrackCount) + ') ' + a_CasTrack.Title;
+  AcrylicTrack.Text    := IntToStr(m_AudioManager.Engine.GetTrackCount) + ') ' + a_CasTrack.Title;
   AcrylicTrack.Name    := 'trkTrack_' + IntToStr(a_CasTrack.ID);
   AcrylicTrack.SetData(@a_CasTrack.RawData.Right, a_CasTrack.Size);
 
@@ -235,13 +237,13 @@ begin
   begin
     (m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Top := nPanelIdx * (c_nPanelGap + c_nPanelHeight) + c_nFirstPanelTop;
 
-    if m_AudioManager.GetTrackByID(StrToInt(String((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Name).SubString(3)), CasTrack) then
-    begin
-      CasTrack.Position := TotalLength;
-      TotalLength := TotalLength + CasTrack.Size;
-
-      ((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Controls[4] as TAcrylicTrack).Text := IntToStr(nPanelIdx + 1) + ') ' + CasTrack.Title;
-    end;
+//    if m_AudioManager.GetTrackByID(StrToInt(String((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Name).SubString(3)), CasTrack) then
+//    begin
+//      CasTrack.Position := TotalLength;
+//      TotalLength := TotalLength + CasTrack.Size;
+//
+//      ((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Controls[4] as TAcrylicTrack).Text := IntToStr(nPanelIdx + 1) + ') ' + CasTrack.Title;
+//    end;
   end;
 end;
 
@@ -312,12 +314,12 @@ var
 begin
   if m_AudioManager.GetTrackByID(StrToInt(String((Sender as TAcrylicButton).Parent.Name).SubString(3)), CasTrack) then
   begin
-    m_AudioManager.SetPosition(m_AudioManager.GetPosition - CasTrack.Size);
-    m_AudioManager.DeleteTrack(CasTrack.ID);
+//    m_AudioManager.SetPosition(m_AudioManager.GetPosition - CasTrack.Size);
+    m_AudioManager.Engine.DeleteTrack(CasTrack.ID);
     m_AudioManager.BroadcastRemoveTrack(CasTrack.ID);
 
-    if m_AudioManager.GetTrackCount = 0 then
-      m_AudioManager.Stop;
+    if m_AudioManager.Engine.GetTrackCount = 0 then
+      m_AudioManager.Engine.Stop;
 
     RearrangeTracks;
     m_AudioManager.BroadcastProgress;
@@ -329,16 +331,22 @@ end;
 procedure TRackFrame.btnAddClick(Sender : TObject);
 var
   OriginalTrack : TCasTrack;
-  NewTrack      : TCasTrack;
+  NewTrack      : TTrackInfo;
+  nTrackID      : Integer;
+  nClipID       : Integer;
 begin
   if m_AudioManager.GetTrackByID(StrToInt(String((Sender as TAcrylicButton).Parent.Name).SubString(3)), OriginalTrack) then
   begin
-    NewTrack       := OriginalTrack.Clone;
-    NewTrack.ID    := m_AudioManager.GenerateID;
-    m_AudioManager.AddTrack(NewTrack, 0);
-    m_AudioManager.AddTrackToPlaylist(NewTrack.ID, m_AudioManager.GetLength);
-    m_AudioManager.BroadcastNewTrack(NewTrack.ID);
-    m_AudioManager.BroadcastProgress;
+    NewTrack := OriginalTrack.Clone;
+    nTrackID := m_AudioManager.Engine.AddTrack(NewTrack.Title, NewTrack.Data, 0);
+
+    if nTrackID > 0 then
+    begin
+      nClipID := m_AudioManager.Engine.Playlist.AddClip(nTrackID, m_AudioManager.Engine.Playlist.Length);
+      m_AudioManager.BroadcastNewTrack(nTrackID);
+      m_AudioManager.BroadcastNewClip(nClipID);
+      m_AudioManager.BroadcastProgress;
+    end;
   end;
 end;
 
@@ -365,8 +373,8 @@ end;
 //==============================================================================
 procedure TRackFrame.trackClick(Sender : TObject);
 begin
-  m_AudioManager.GoToTrack(StrToInt(String((Sender as TAcrylicTrack).Parent.Name).SubString(3)));
-  m_AudioManager.BroadcastProgress;
+//  m_AudioManager.GoToTrack(StrToInt(String((Sender as TAcrylicTrack).Parent.Name).SubString(3)));
+//  m_AudioManager.BroadcastProgress;
 end;
 
 //==============================================================================
@@ -440,16 +448,22 @@ var
   dProgress : Double;
   nPanelIdx : Integer;
 begin
-  for nPanelIdx := 0 to m_lstTracks.Count - 1 do
-  begin
-    if m_AudioManager.GetTrackByID(StrToInt(String((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Name).SubString(3)), CasTrack) then
-    begin
-      dProgress := (m_AudioManager.GetPosition - CasTrack.Position) / CasTrack.Size;
+//  for nPanelIdx := 0 to m_lstTracks.Count - 1 do
+//  begin
+//    if m_AudioManager.GetTrackByID(StrToInt(String((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Name).SubString(3)), CasTrack) then
+//    begin
+//      dProgress := (m_AudioManager.GetPosition - CasTrack.Position) / CasTrack.Size;
+//
+//      ((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Controls[4] as TAcrylicTrack).Position := dProgress;
+//      ((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Controls[4] as TAcrylicTrack).Refresh;
+//    end;
+//  end;
+end;
 
-      ((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Controls[4] as TAcrylicTrack).Position := dProgress;
-      ((m_lstTracks.Items[nPanelIdx] as TAcrylicGhostPanel).Controls[4] as TAcrylicTrack).Refresh;
-    end;
-  end;
+//==============================================================================
+procedure TRackFrame.AddClip(a_nClipID : Integer; a_nIndex : Integer);
+begin
+  //
 end;
 
 //==============================================================================

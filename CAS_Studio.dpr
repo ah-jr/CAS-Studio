@@ -36,6 +36,7 @@ uses
   CasAsioU        in 'deps\CasAudioEngine\src\CasAsioU.pas',
   CasDirectSoundU in 'deps\CasAudioEngine\src\CasDirectSoundU.pas',
   CasDsThreadU    in 'deps\CasAudioEngine\src\CasDsThreadU.pas',
+  CasClipU        in 'deps\CasAudioEngine\src\CasClipU.pas',
   CasTrackU       in 'deps\CasAudioEngine\src\CasTrackU.pas',
   CasMixerU       in 'deps\CasAudioEngine\src\CasMixerU.pas',
   CasPlaylistU    in 'deps\CasAudioEngine\src\CasPlaylistU.pas',

@@ -60,6 +60,7 @@ type
 
     procedure UpdateBPM     (a_dOldBPM, a_dNewBPM : Double);
     procedure UpdateProgress(a_dProgress : Double);
+    procedure AddClip       (a_nClipID   : Integer; a_nIndex : Integer = -1);
     procedure AddTrack      (a_nTrackID  : Integer);
     procedure RemoveTrack   (a_nTrackID  : Integer);
     procedure UpdateGUI;
@@ -96,7 +97,7 @@ var
   VisualObject : TVisualObject;
 begin
   for VisualObject in m_lstVisualObjects do
-     VisualObject.Free;
+    VisualObject.Free;
 
   m_lstVisualObjects.Free;
 
@@ -123,6 +124,12 @@ end;
 
 //==============================================================================
 procedure TMixerSurface.DriverChange;
+begin
+  //
+end;
+
+//==============================================================================
+procedure TMixerSurface.AddClip(a_nClipID : Integer; a_nIndex : Integer);
 begin
   //
 end;

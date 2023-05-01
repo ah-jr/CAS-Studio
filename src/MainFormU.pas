@@ -28,6 +28,7 @@ uses
   Vcl.Forms,
   Vcl.ImgList,
   Vcl.ExtCtrls,
+  Vcl.NumberBox,
   AsioList,
   Math,
   ShellApi,
@@ -44,7 +45,7 @@ uses
   AcrylicGhostPanelU,
   AcrylicPopUpU,
   AudioManagerU,
-  TypesU, Vcl.NumberBox;
+  TypesU;
 
 type
   TMainForm = class(TAcrylicForm, IAudioListener)
@@ -124,10 +125,14 @@ type
 
     procedure UpdateBPM     (a_dOldBPM, a_dNewBPM : Double);
     procedure UpdateProgress(a_dProgress : Double);
+    procedure AddClip       (a_nClipID  : Integer; a_nIndex : Integer = -1);
     procedure AddTrack      (a_nTrackID  : Integer);
     procedure RemoveTrack   (a_nTrackID  : Integer);
     procedure UpdateGUI;
     procedure DriverChange;
+
+  public
+    destructor  Destroy; override;
 
 end;
 
@@ -145,7 +150,7 @@ uses
   GDIPUTIL,
   CasUtilsU,
   CasTypesU,
-  CasTrackU,
+  CasClipU,
   CasConstantsU,
   Registry,
   AcrylicUtilsU,
@@ -188,6 +193,14 @@ begin
   Application.OnMessage := MessageEvent;
 
   Inherited;
+end;
+
+//==============================================================================
+destructor TMainForm.Destroy;
+begin
+  inherited;
+
+  FreeAndNil(m_AudioManager);
 end;
 
 //==============================================================================
@@ -357,11 +370,10 @@ procedure TMainForm.FormDestroy(Sender: TObject);
 begin
   m_AudioManager.RemoveListener(Self);
 
-  FreeAndNil(m_AudioManager);
+  SetLength(m_DriverList, 0);
+
   FreeAndNil(m_dctFrames);
   FreeAndNil(m_lstFiles);
-
-  SetLength(m_DriverList, 0);
 end;
 
 //==============================================================================
@@ -417,18 +429,18 @@ end;
 //==============================================================================
 procedure TMainForm.ChangeEnabledObjects;
 begin
-  btnOpenFile.Enabled           := (m_AudioManager.GetReady);
-  btnDriverControlPanel.Enabled := (m_AudioManager.GetReady) and
+  btnOpenFile.Enabled           := (m_AudioManager.Engine.GetReady);
+  btnDriverControlPanel.Enabled := (m_AudioManager.Engine.GetReady) and
                                    (m_AudioManager.Engine.DriverType = dtASIO);
 
-  btnPlay.Enabled               := (m_AudioManager.GetReady) and
-                                   (m_AudioManager.GetTrackCount > 0);
+  btnPlay.Enabled               := (m_AudioManager.Engine.GetReady) and
+                                   (m_AudioManager.Engine.GetTrackCount > 0);
 
-  btnStop.Enabled               := (m_AudioManager.GetTrackCount > 0);
-  btnPrev.Enabled               := (m_AudioManager.GetTrackCount > 0);
-  btnNext.Enabled               := (m_AudioManager.GetTrackCount > 0);
-  btnBarFunc.Enabled            := (m_AudioManager.GetTrackCount > 0);
-  tbProgress.Enabled            := (m_AudioManager.GetTrackCount > 0);
+  btnStop.Enabled               := (m_AudioManager.Engine.GetTrackCount > 0);
+  btnPrev.Enabled               := (m_AudioManager.Engine.GetTrackCount > 0);
+  btnNext.Enabled               := (m_AudioManager.Engine.GetTrackCount > 0);
+  btnBarFunc.Enabled            := (m_AudioManager.Engine.GetTrackCount > 0);
+  tbProgress.Enabled            := (m_AudioManager.Engine.GetTrackCount > 0);
 
   RefreshAcrylicControls(Self);
 end;
@@ -443,7 +455,7 @@ begin
     then dtDriverType := dtDirectSound
     else dtDriverType := dtASIO;
 
-  m_AudioManager.ChangeDriver(dtDriverType, cbDriver.ItemIndex - 1);
+  m_AudioManager.Engine.ChangeDriver(dtDriverType, cbDriver.ItemIndex - 1);
   m_AudioManager.Engine.AsyncUpdate := dtDriverType = dtDirectSound;
 
   pngImage    := TPngImage.Create;
@@ -470,8 +482,8 @@ end;
 //==============================================================================
 procedure TMainForm.btnDriverControlPanelClick(Sender: TObject);
 begin
-  if m_AudioManager.GetReady then
-    m_AudioManager.ControlPanel;
+  if m_AudioManager.Engine.GetReady then
+    m_AudioManager.Engine.ControlPanel;
 end;
 
 //==============================================================================
@@ -488,13 +500,13 @@ procedure TMainForm.btnPlayClick(Sender: TObject);
 var
   pngImage : TPngImage;
 begin
-  if m_AudioManager.GetPlaying then
+  if m_AudioManager.Engine.GetPlaying then
   begin
     pngImage    := TPngImage.Create;
     pngImage.LoadFromResourceName(HInstance, 'btnPlay');
     btnPlay.Png := pngImage;
 
-    m_AudioManager.Pause;
+    m_AudioManager.Engine.Pause;
   end
   else
   begin
@@ -502,7 +514,7 @@ begin
     pngImage.LoadFromResourceName(HInstance, 'btnPause');
     btnPlay.Png := pngImage;
 
-    m_AudioManager.Play;
+    m_AudioManager.Engine.Play;
   end;
 
   ChangeEnabledObjects;
@@ -517,7 +529,7 @@ begin
   pngImage.LoadFromResourceName(HInstance, 'btnPlay');
   btnPlay.Png := pngImage;
 
-  m_AudioManager.Stop;
+  m_AudioManager.Engine.Stop;
   UpdateProgressBar;
   ChangeEnabledObjects;
 end;
@@ -525,7 +537,7 @@ end;
 //==============================================================================
 procedure TMainForm.btnPrevClick(Sender: TObject);
 begin
-  m_AudioManager.Prev;
+  m_AudioManager.Engine.Prev;
   UpdateProgressBar;
   ChangeEnabledObjects;
 end;
@@ -533,7 +545,7 @@ end;
 //==============================================================================
 procedure TMainForm.btnNextClick(Sender: TObject);
 begin
-  m_AudioManager.Next;
+  m_AudioManager.Engine.Next;
   UpdateProgressBar;
   ChangeEnabledObjects;
 end;
@@ -541,8 +553,8 @@ end;
 //==============================================================================
 procedure TMainForm.btnPrevDblClick(Sender: TObject);
 begin
-  m_AudioManager.Prev;
-  m_AudioManager.Prev;
+  m_AudioManager.Engine.Prev;
+  m_AudioManager.Engine.Prev;
   UpdateProgressBar;
   ChangeEnabledObjects;
 end;
@@ -550,7 +562,7 @@ end;
 //==============================================================================
 procedure TMainForm.knbLevelChange(Sender: TObject);
 begin
-  m_AudioManager.SetLevel(knbLevel.Level);
+  m_AudioManager.Engine.SetLevel(knbLevel.Level);
 end;
 
 //==============================================================================
@@ -568,21 +580,21 @@ end;
 //==============================================================================
 procedure TMainForm.UpdateBufferPosition;
 var
-  lstActive : TList<TTrackInstance>;
+  lstActive : TList<Integer>;
+  Clip      : TCasClip;
 begin
   if not m_bBlockPosUpdate then
   begin
     if m_bPlaylistBar then
-      m_AudioManager.SetPosition(Trunc(tbProgress.Level * m_AudioManager.GetLength))
+      m_AudioManager.Engine.SetPosition(Trunc(tbProgress.Level * m_AudioManager.Engine.GetLength))
     else
     begin
-      lstActive := m_AudioManager.GetActiveTrackInstances;
+      lstActive := m_AudioManager.Engine.Playlist.GetActiveClips;
 
       if (lstActive.Count > 0) then
       begin
-        m_AudioManager.SetPosition(lstActive.Items[0].Position +
-                                   lstActive.Items[0].First +
-                                   Trunc(tbProgress.Level * lstActive.Items[0].Last));
+        m_AudioManager.Engine.Playlist.GetClip(lstActive[0], Clip);
+        m_AudioManager.Engine.SetPosition(Clip.StartPos + Trunc(tbProgress.Level * (Clip.Size)));
       end;
 
       lstActive.Free;
@@ -593,27 +605,27 @@ end;
 //==============================================================================
 procedure TMainForm.UpdateProgressBar;
 var
-  lstActive : TList<TTrackInstance>;
+  lstActive : TList<Integer>;
 begin
   m_bBlockPosUpdate := True;
   if m_bPlaylistBar then
   begin
-    tbProgress.Level := m_AudioManager.GetProgress;
-    lblTime.Text     := m_AudioManager.GetTime + '/' + m_AudioManager.GetDuration;
+    tbProgress.Level := m_AudioManager.Engine.GetProgress;
+    lblTime.Text     := m_AudioManager.Engine.GetTime + '/' + m_AudioManager.Engine.GetDuration;
   end
   else
   begin
-    lstActive := m_AudioManager.GetActiveTrackInstances;
+    lstActive := m_AudioManager.Engine.Playlist.GetActiveClips;
 
     if lstActive.Count > 0 then
     begin
-      tbProgress.Level := m_AudioManager.GetTrackInstanceProgress(lstActive.Items[0].InstID);
-      lblTime.Text     := m_AudioManager.GetTime + '/' + m_AudioManager.GetDuration;
+      tbProgress.Level := m_AudioManager.Engine.Playlist.GetClipProgress(lstActive[0]);
+      lblTime.Text     := m_AudioManager.Engine.GetTime + '/' + m_AudioManager.Engine.GetDuration;
     end
     else
     begin
       tbProgress.Level := 0;
-      lblTime.Text     := m_AudioManager.GetTime + '/' + m_AudioManager.GetDuration;
+      lblTime.Text     := m_AudioManager.Engine.GetTime + '/' + m_AudioManager.Engine.GetDuration;
     end;
 
     lstActive.Free;
@@ -686,6 +698,13 @@ begin
   m_AudioManager.AudioExport(asSpecs, 'audio');
 end;
 
+//==============================================================================
+procedure TMainForm.AddClip(a_nClipID : Integer; a_nIndex : Integer);
+begin
+  //
+end;
+
+//==============================================================================
 procedure TMainForm.AddTrack(a_nTrackID : Integer);
 begin
   if m_bStartPlaying then

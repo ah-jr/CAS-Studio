@@ -26,7 +26,7 @@ type
     constructor Create(a_mmManager : TMixerManager; a_nMixerID : Integer);
     destructor  Destroy; override;
 
-    procedure Paint        (a_f2dCanvas : TF2DCanvas); override;
+    procedure Paint(a_f2dCanvas : TF2DCanvas); override;
 
     procedure MouseMove(Shift : TShiftState; X, Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;

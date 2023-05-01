@@ -38,8 +38,9 @@ type
   IAudioListener = interface
     procedure UpdateBPM     (a_dOldBPM, a_dNewBPM : Double);
     procedure UpdateProgress(a_dProgress : Double);
+    procedure AddClip       (a_nClipID  : Integer; a_nIndex : Integer = -1);
     procedure AddTrack      (a_nTrackID : Integer);
-    procedure RemoveTrack   (a_nTrackID  : Integer);
+    procedure RemoveTrack   (a_nTrackID : Integer);
     procedure UpdateGUI;
     procedure DriverChange;
   end;
