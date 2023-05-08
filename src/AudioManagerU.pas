@@ -65,16 +65,6 @@ type
     function  GetClipTrackID(a_nClipID    : Integer) : Integer;
     function  GetTrackSize  (a_nTrackID   : Integer) : Integer;
 
-    function  GetTrackDataByTrackID(a_nTrackID   : Integer;
-                                    var a_pLeft  : PIntArray;
-                                    var a_pRight : PIntArray;
-                                    var a_nSize  : Integer) : Boolean;
-    function  GetTrackDataByClipID  (a_nClipID   : Integer;
-                                    var a_pLeft  : PIntArray;
-                                    var a_pRight : PIntArray;
-                                    var a_nSize  : Integer) : Boolean;
-
-
     function GetTrackById(a_nID: Integer; var a_Castrack : TCasTrack) : Boolean;
 
     property Engine    : TCasEngine read m_CasEngine;
@@ -376,37 +366,6 @@ begin
   Result := 0;
   if m_CasEngine.Database.GetTrackById(a_nTrackID, CasTrack) then
     Result := CasTrack.Size;
-end;
-
-//==============================================================================
-function TAudioManager.GetTrackDataByClipID(a_nClipID    : Integer;
-                                            var a_pLeft  : PIntArray;
-                                            var a_pRight : PIntArray;
-                                            var a_nSize  : Integer) : Boolean;
-var
-  Clip : TCasClip;
-begin
-  m_CasEngine.Playlist.GetClip(a_nClipID, Clip);
-
-  Result := GetTrackDataByTrackID(Clip.TrackID, a_pLeft, a_pRight, a_nSize);
-end;
-
-//==============================================================================
-function TAudioManager.GetTrackDataByTrackID(a_nTrackID   : Integer;
-                                             var a_pLeft  : PIntArray;
-                                             var a_pRight : PIntArray;
-                                             var a_nSize  : Integer) : Boolean;
-var
-  CasTrack : TCasTrack;
-begin
-  Result := m_CasEngine.DataBase.GetTrackByID(a_nTrackID, CasTrack);
-
-  if Result then
-  begin
-    a_pLeft  := @CasTrack.RawData.Left;
-    a_pRight := @CasTrack.RawData.Right;
-    a_nSize := Length(CasTrack.RawData.Left);
-  end;
 end;
 
 //==============================================================================

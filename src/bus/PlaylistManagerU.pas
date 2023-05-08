@@ -6,6 +6,8 @@ uses
   System.Types,
   AudioManagerU,
   VisualTypesU,
+  CasTrackU,
+  CasClipU,
   TypesU;
 
 type
@@ -41,10 +43,7 @@ type
     function  GetProgress       : Double;
     function  GetPlaylistRect   : TRect;
 
-    function  GetTrackData(a_nClipID    : Integer;
-                           var a_pLeft  : PIntArray;
-                           var a_pRight : PIntArray;
-                           var a_nSize  : Integer) : Boolean;
+    function  GetTrackByClipID(a_nClipID : Integer; var a_CasTrack : TCasTrack) : Boolean;
 
     procedure SetProgress     (a_dProgress : Double);
     procedure SetPlaylistRect (a_recPlaylist : TRect);
@@ -236,12 +235,16 @@ begin
 end;
 
 //==============================================================================
-function TPlaylistManager.GetTrackData(a_nClipID    : Integer;
-                                       var a_pLeft  : PIntArray;
-                                       var a_pRight : PIntArray;
-                                       var a_nSize  : Integer) : Boolean;
+function TPlaylistManager.GetTrackByClipID(a_nClipID : Integer; var a_CasTrack : TCasTrack) : Boolean;
+var
+  Clip : TCasClip;
 begin
-  Result := m_AudioManager.GetTrackDataByClipID(a_nClipID, a_pLeft, a_pRight, a_nSize);
+  Result := False;
+
+  if m_AudioManager.Engine.Playlist.GetClip(a_nClipID, Clip) then
+  begin
+    Result := m_AudioManager.Engine.Database.GetTrackById(Clip.TrackID, a_CasTrack);
+  end;
 end;
 
 //==============================================================================
